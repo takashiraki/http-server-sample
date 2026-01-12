@@ -1,1 +1,1 @@
-# HTTP server sampel on Ubuntu
+# HTTP server sample on Ubuntu
