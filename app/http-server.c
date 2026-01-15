@@ -33,7 +33,7 @@ int main(void)
     // ということをOSに伝えています。
     bind(server_fd, (struct sockaddr *)&addr, sizeof(addr));
 
-    // ここでリッスンするよ（接続町状態にする）
+    // ここでリッスンするよ（接続待ち状態にする）
     listen(server_fd, 5);
 
     printf("listening on port 8080...\n");
@@ -41,7 +41,8 @@ int main(void)
     // ここでリクエストを受け入れる
     client_fd = accept(server_fd, NULL, NULL);
 
-    if (client_fd < 0){
+    if (client_fd < 0)
+    {
         perror("accept failed");
         return 1;
     }
