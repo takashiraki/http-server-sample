@@ -7,8 +7,8 @@ WORKDIR /app
 
 COPY app /app
 
-RUN gcc -o server server.c
+RUN gcc -o http-server http-server.c
 
 EXPOSE 8080
 
-CMD ["./server"]
+CMD ["./http-server"]
