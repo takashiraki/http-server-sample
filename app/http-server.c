@@ -58,4 +58,26 @@ int main(void)
         close(server_fd);
         return 1;
     }
+
+    buffer[n] = '\0'; // null終端
+
+    printf("REQUEST:\n%s\n", buffer);
+
+    // レスポンスを書く
+    const char *body = "Hello world";
+    char response[256];
+
+    int len = snprintf(response, sizeof(response),
+                       "HTTP/1.1 200 OK\r\n"
+                       "Content-Length: %zu\r\n"
+                       "Connection: close\r\n"
+                       "\r\n"
+                       "%s",
+                       strlen(body), body);
+
+    write(client_fd, response, len);
+
+    // ソケットを閉じる
+    close(client_fd);
+    close(server_fd);
 }
