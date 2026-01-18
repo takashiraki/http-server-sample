@@ -11,4 +11,4 @@ RUN gcc -o http-server http-server.c
 
 EXPOSE 8080
 
-CMD ["./server"]
+CMD ["./http-server"]
