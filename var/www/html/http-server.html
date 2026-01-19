@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTTP Server Sample - Minimal C Implementation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 3rem 1rem;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: #ffffff;
+        }
+
+        header {
+            background: #000000;
+            color: #ffffff;
+            padding: 4rem 2rem;
+            text-align: center;
+            border-bottom: 1px solid #000;
+        }
+
+        header h1 {
+            font-size: 3rem;
+            margin-bottom: 0.8rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        header p {
+            font-size: 1.3rem;
+            opacity: 0.85;
+            font-weight: 300;
+        }
+
+        .content {
+            padding: 4rem 2rem;
+        }
+
+        .section {
+            margin-bottom: 4rem;
+            padding-bottom: 4rem;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .section:last-child {
+            border-bottom: none;
+        }
+
+        .section h2 {
+            font-size: 2.2rem;
+            margin-bottom: 1.5rem;
+            color: #000000;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+
+        .section p {
+            font-size: 1.1rem;
+            margin-bottom: 1.2rem;
+            color: #4a4a4a;
+            max-width: 800px;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 2.5rem;
+        }
+
+        .feature-card {
+            background: #fafafa;
+            padding: 2rem;
+            border: 1px solid #e0e0e0;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            background: #000000;
+            color: #ffffff;
+            border-color: #000000;
+            transform: translateY(-3px);
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .feature-card p {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: inherit;
+            opacity: 0.8;
+        }
+
+        .code-block {
+            background: #0a0a0a;
+            color: #e0e0e0;
+            padding: 2rem;
+            overflow-x: auto;
+            margin: 2rem 0;
+            position: relative;
+            border: 1px solid #000;
+        }
+
+        .code-block::before {
+            content: attr(data-language);
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: #ffffff;
+            color: #000000;
+            padding: 0.4rem 1rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .code-block pre {
+            margin: 0;
+            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .tech-badge {
+            background: #000000;
+            color: #ffffff;
+            padding: 0.7rem 1.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            letter-spacing: 0.02em;
+            border: 1px solid #000;
+            transition: all 0.3s ease;
+        }
+
+        .tech-badge:hover {
+            background: #ffffff;
+            color: #000000;
+        }
+
+        .steps {
+            counter-reset: step-counter;
+            list-style: none;
+            margin-top: 2rem;
+        }
+
+        .steps li {
+            counter-increment: step-counter;
+            position: relative;
+            padding-left: 4rem;
+            margin-bottom: 2.5rem;
+            font-size: 1.1rem;
+        }
+
+        .steps li::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            background: #000000;
+            color: #ffffff;
+            width: 2.8rem;
+            height: 2.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.3rem;
+        }
+
+        .steps li strong {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 1.2rem;
+        }
+
+        footer {
+            background: #000000;
+            padding: 3rem 2rem;
+            text-align: center;
+            color: #ffffff;
+            margin-top: 4rem;
+        }
+
+        footer p {
+            color: #ffffff;
+            opacity: 0.8;
+            max-width: none;
+        }
+
+        .highlight {
+            background: #000000;
+            color: #ffffff;
+            padding: 0.2rem 0.6rem;
+            font-weight: 600;
+        }
+
+        code {
+            background: #f0f0f0;
+            padding: 0.2rem 0.5rem;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.95em;
+            border: 1px solid #e0e0e0;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            header h1 {
+                font-size: 2.2rem;
+            }
+
+            header p {
+                font-size: 1.1rem;
+            }
+
+            .section h2 {
+                font-size: 1.8rem;
+            }
+
+            .content {
+                padding: 3rem 1.5rem;
+            }
+
+            .steps li {
+                padding-left: 3.5rem;
+            }
+
+            .steps li::before {
+                width: 2.5rem;
+                height: 2.5rem;
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>HTTP Server</h1>
+            <p>A minimal HTTP server implementation in C</p>
+        </header>
+
+        <div class="content">
+            <div class="section">
+                <h2>Overview</h2>
+                <p>
+                    This project is a simple HTTP server implementation written in <span class="highlight">C</span>.
+                    It serves as an educational resource for understanding socket programming fundamentals and the HTTP
+                    protocol.
+                </p>
+                <p>
+                    The server listens on port <span class="highlight">8080</span> and responds with "Hello world" to
+                    incoming requests.
+                </p>
+            </div>
+
+            <div class="section">
+                <h2>Features</h2>
+                <div class="features">
+                    <div class="feature-card">
+                        <h3>Socket Communication</h3>
+                        <p>TCP/IP communication using POSIX standard socket API</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>HTTP/1.1 Compatible</h3>
+                        <p>Responds with basic HTTP/1.1 compliant responses</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Docker Ready</h3>
+                        <p>Easy containerization and deployment with Dockerfile</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Educational</h3>
+                        <p>Well-commented code ideal for learning low-level network programming</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Tech Stack</h2>
+                <div class="tech-stack">
+                    <span class="tech-badge">C</span>
+                    <span class="tech-badge">POSIX Socket API</span>
+                    <span class="tech-badge">GCC</span>
+                    <span class="tech-badge">Docker</span>
+                    <span class="tech-badge">Ubuntu</span>
+                    <span class="tech-badge">HTTP/1.1</span>
+                </div>
+            </div>
+
+            <!-- <div class="section">
+                <h2>Getting Started</h2>
+                <ol class="steps">
+                    <li>
+                        <strong>Clone the repository</strong><br>
+                        Clone this project to your local machine
+                    </li>
+                    <li>
+                        <strong>Build Docker image</strong><br>
+                        <div class="code-block" data-language="bash">
+                            <pre>docker build -t http-server-sample .</pre>
+                        </div>
+                    </li>
+                    <li>
+                        <strong>Run the container</strong><br>
+                        <div class="code-block" data-language="bash">
+                            <pre>docker run -p 8080:8080 http-server-sample</pre>
+                        </div>
+                    </li>
+                    <li>
+                        <strong>Test the server</strong><br>
+                        Access <code>http://localhost:8080</code> via browser or curl
+                        <div class="code-block" data-language="bash">
+                            <pre>curl http://localhost:8080</pre>
+                        </div>
+                    </li>
+                </ol>
+            </div> -->
+        </div>
+
+        <footer>
+            <p>HTTP Server Sample - A minimal HTTP server implementation in C</p>
+            <p style="margin-top: 0.5rem; font-size: 0.9rem;">Listens on port 8080 and responds with "Hello world"</p>
+        </footer>
+    </div>
+</body>
+
+</html>
