@@ -3,7 +3,7 @@ FROM ubuntu:latest
 RUN apt update \
     && apt install -y build-essential vim
 
-COPY var/www/html /var/www/html
+COPY var /var
 
 WORKDIR /app
 
