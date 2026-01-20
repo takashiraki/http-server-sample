@@ -5,6 +5,9 @@
 #include <unistd.h>
 
 char *read_file(const char *ppath);
+void parse_request_path(const char *request, char *path_out, size_t size);
+const char *get_content_type(const char *path);
+void build_file_path(const char *request_path, char *full_path, size_t size);
 
 int main(void)
 {
@@ -71,7 +74,15 @@ int main(void)
             printf("REQUEST:\n%s\n", buffer);
 
             // ファイル読み込み
-            char *content = read_file("/var/www/html/http-server.html");
+            char request_path[256];
+            parse_request_path(buffer, request_path, sizeof(request_path));
+
+            char file_path[512];
+            build_file_path(request_path, file_path, sizeof(file_path));
+
+            char *content = read_file(file_path);
+
+            const char *content_type = get_content_type(file_path);
 
             if (content == NULL)
             {
@@ -95,12 +106,12 @@ int main(void)
 
             int len = snprintf(response, response_size,
                                "HTTP/1.1 200 OK\r\n"
-                               "Content-Type: text/html\r\n"
+                               "Content-Type: %s\r\n"
                                "Content-Length: %zu\r\n"
                                "Connection: close\r\n"
                                "\r\n"
                                "%s",
-                               strlen(content), content);
+                               content_type, strlen(content), content);
 
             write(client_fd, response, len);
             free(content);
@@ -144,4 +155,81 @@ char *read_file(const char *path)
 
     fclose(file);
     return content;
+}
+
+// リクエストパスの解析
+void parse_request_path(const char *request, char *path_out, size_t size)
+{
+    const char *start = strchr(request, ' ');
+
+    if (start == NULL)
+    {
+        strncpy(path_out, "/", size);
+        return;
+    }
+
+    start++;
+
+    const char *end = strchr(start, ' ');
+
+    if (end == NULL)
+    {
+        strncpy(path_out, "/", size);
+        return;
+    }
+
+    size_t len = end - start;
+    if (len >= size)
+        len = size - 1;
+
+    strncpy(path_out, start, len);
+    path_out[len] = '\0';
+}
+
+const char *get_content_type(const char *path)
+{
+    const char *ext = strrchr(path, '.');
+
+    if (ext == NULL)
+    {
+        return "text/html";
+    }
+
+    if (strcmp(ext, ".html") == 0)
+        return "text/html";
+    if (strcmp(ext, ".css") == 0)
+        return "text/css";
+    if (strcmp(ext, ".js") == 0)
+        return "application/javascript";
+    if (strcmp(ext, ".json") == 0)
+        return "application/json";
+    if (strcmp(ext, ".png") == 0)
+        return "image/png";
+    if (strcmp(ext, ".favicon.ico") == 0)
+        return "image/png";
+    if (strcmp(ext, ".jpg") == 0 || strcmp(ext, ".jpeg") == 0)
+        return "image/jpeg";
+
+    return "text/plain";
+}
+
+void build_file_path(const char *request_path, char *full_path, size_t size)
+{
+    const char *base = "/var/www/html";
+
+    if (strcmp(request_path, "/") == 0)
+    {
+        snprintf(full_path, size, "%s/http-server.html", base);
+    }
+    else
+    {
+        if (strncmp(request_path, "./", 2) == 0)
+        {
+            snprintf(full_path, size, "%s%s", base, request_path + 1);
+        }
+        else
+        {
+            snprintf(full_path, size, "%s%s", base, request_path);
+        }
+    }
 }
