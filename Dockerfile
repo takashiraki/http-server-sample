@@ -1,7 +1,7 @@
 FROM ubuntu:latest
 
 RUN apt update \
-    && apt install -y build-essential vim
+    && apt install -y build-essential vim gdb git
 
 COPY var /var
 
