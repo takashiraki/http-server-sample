@@ -9,6 +9,8 @@ void parse_request_path(const char *request, char *path_out, size_t size);
 const char *get_content_type(const char *path);
 void build_file_path(const char *request_path, char *full_path, size_t size);
 
+const int LOOP_INFINITY = 1;
+
 int main(void)
 {
     // 待ち受けソケット
@@ -52,7 +54,7 @@ int main(void)
 
     printf("listening on port 8080...\n");
 
-    while (1)
+    while (LOOP_INFINITY)
     {
         // ここでリクエストを受け入れる
         client_fd = accept(server_fd, NULL, NULL);
@@ -87,7 +89,13 @@ int main(void)
             if (content == NULL)
             {
                 printf("error: read content\n");
-                close(client_fd);
+                int len = snprintf(buffer, sizeof(buffer),
+                                   "HTTP/1.1 404 Not Found\r\n"
+                                   "Content-Type: text/html; charset=utf-8\r\n"
+                                   "Content-Length: 0\r\n"
+                                   "Connection: close\r\n"
+                                   "\r\n");
+                write(client_fd, buffer, len);
                 continue;
             }
 
