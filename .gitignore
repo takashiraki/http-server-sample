@@ -1,2 +1,5 @@
 /app/*
 !/app/*.c
+
+/var/*
+!/var/www/html/http-server.html
