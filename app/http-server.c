@@ -4,12 +4,18 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-char *read_file(const char *ppath);
+const int LOOP_INFINITY = 1;
+
+typedef struct
+{
+    char *data;
+    size_t size;
+} FileData;
+
+FileData read_file(const char *path);
 void parse_request_path(const char *request, char *path_out, size_t size);
 const char *get_content_type(const char *path);
 void build_file_path(const char *request_path, char *full_path, size_t size);
-
-const int LOOP_INFINITY = 1;
 
 int main(void)
 {
@@ -77,16 +83,15 @@ int main(void)
 
             // ファイル読み込み
             char request_path[256];
+
             parse_request_path(buffer, request_path, sizeof(request_path));
 
             char file_path[512];
             build_file_path(request_path, file_path, sizeof(file_path));
 
-            char *content = read_file(file_path);
+            FileData file_data = read_file(file_path);
 
-            const char *content_type = get_content_type(file_path);
-
-            if (content == NULL)
+            if (file_data.data == NULL)
             {
                 printf("error: read content\n");
                 int len = snprintf(buffer, sizeof(buffer),
@@ -96,18 +101,21 @@ int main(void)
                                    "Connection: close\r\n"
                                    "\r\n");
                 write(client_fd, buffer, len);
+                close(client_fd);
                 continue;
             }
 
+            const char *content_type = get_content_type(file_path);
+
             // レスポンスを書く（サイズは動的に）
-            size_t content_length = strlen(content);
+            size_t content_length = file_data.size;
             size_t response_size = content_length + 512;
             char *response = malloc(response_size);
 
             if (response == NULL)
             {
                 printf("error: allocate response\n");
-                free(content);
+                free(file_data.data);
                 close(client_fd);
                 continue;
             }
@@ -119,10 +127,10 @@ int main(void)
                                "Connection: close\r\n"
                                "\r\n"
                                "%s",
-                               content_type, strlen(content), content);
+                               content_type, file_data.size, file_data.data);
 
             write(client_fd, response, len);
-            free(content);
+            free(file_data.data);
             free(response);
         }
 
@@ -133,15 +141,15 @@ int main(void)
     close(server_fd);
 }
 
-char *read_file(const char *path)
+FileData read_file(const char *path)
 {
     // ファイルを取得
-    FILE *file = fopen(path, "r");
+    FileData result = {NULL, 0};
+
+    FILE *file = fopen(path, "rb");
 
     if (file == NULL)
-    {
-        return NULL;
-    }
+        return result;
 
     // ファイルサイズを取得
     fseek(file, 0, SEEK_END);
@@ -149,20 +157,22 @@ char *read_file(const char *path)
     fseek(file, 0, SEEK_SET);
 
     // メモリ確保
-    char *content = malloc(file_size + 1);
+    char *data = malloc(file_size);
 
-    if (content == NULL)
+    if (data == NULL)
     {
         fclose(file);
-        return NULL;
+        return result;
     }
 
     // ファイルの読み込み
-    fread(content, 1, file_size, file);
-    content[file_size] = '\0'; // null終端
-
+    fread(data, 1, file_size, file);
     fclose(file);
-    return content;
+
+    result.data = data;
+    result.size = file_size;
+
+    return result;
 }
 
 // リクエストパスの解析
