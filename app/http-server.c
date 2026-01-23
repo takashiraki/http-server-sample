@@ -116,8 +116,33 @@ int main(void)
                                       "\r\n",
                                       content_type, file_data.size);
 
-            write(client_fd, header, header_len);
-            write(client_fd, file_data.data, file_data.size);
+            ssize_t header_written = 0;
+            while (header_written < header_len)
+            {
+                ssize_t written = write(client_fd, header + header_written, header_len - header_written);
+                if (written <= 0)
+                {
+                    perror("write failed");
+                    goto cleanup;
+                }
+
+                header_written += written;
+            }
+
+            ssize_t body_written = 0;
+            while (body_written < file_data.size)
+            {
+                ssize_t written = write(client_fd, file_data.data + body_written, file_data.size - body_written);
+                if (written <= 0)
+                {
+                    perror("write failed");
+                    goto cleanup;
+                }
+
+                body_written += written;
+            }
+
+        cleanup:
             free(file_data.data);
         }
 
