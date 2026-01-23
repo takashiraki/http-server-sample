@@ -13,7 +13,6 @@ typedef struct
 } FileData;
 
 FileData read_file(const char *path);
-void parse_request_path(const char *request, char *path_out, size_t size);
 const char *get_content_type(const char *path);
 void build_file_path(const char *request_path, char *full_path, size_t size);
 
@@ -84,7 +83,38 @@ int main(void)
             // ファイル読み込み
             char request_path[256];
 
-            parse_request_path(buffer, request_path, sizeof(request_path));
+            // メソッド読むよ（GETのみ対応）
+            char method[8];
+
+            if (sscanf(buffer, "%7s %255s", method, request_path) != 2)
+            {
+                // 400返す
+                printf("error: parse method\n");
+                int len = snprintf(buffer, sizeof(buffer),
+                                   "HTTP/1.1 400 Bad Request\r\n"
+                                   "Content-Type: text/html; charset=utf-8\r\n"
+                                   "Content-Length: 0\r\n"
+                                   "Connection: close\r\n"
+                                   "\r\n");
+                write(client_fd, buffer, len);
+                close(client_fd);
+                continue;
+            }
+
+            if (strcmp(method, "GET") != 0)
+            {
+                // 405返す
+                printf("error: method not allowed\n");
+                int len = snprintf(buffer, sizeof(buffer),
+                                   "HTTP/1.1 405 Method Not Allowed\r\n"
+                                   "Content-Type: text/html; charset=utf-8\r\n"
+                                   "Content-Length: 0\r\n"
+                                   "Connection: close\r\n"
+                                   "\r\n");
+                write(client_fd, buffer, len);
+                close(client_fd);
+                continue;
+            }
 
             char file_path[512];
             build_file_path(request_path, file_path, sizeof(file_path));
@@ -185,35 +215,6 @@ FileData read_file(const char *path)
     result.size = file_size;
 
     return result;
-}
-
-// リクエストパスの解析
-void parse_request_path(const char *request, char *path_out, size_t size)
-{
-    const char *start = strchr(request, ' ');
-
-    if (start == NULL)
-    {
-        strncpy(path_out, "/", size);
-        return;
-    }
-
-    start++;
-
-    const char *end = strchr(start, ' ');
-
-    if (end == NULL)
-    {
-        strncpy(path_out, "/", size);
-        return;
-    }
-
-    size_t len = end - start;
-    if (len >= size)
-        len = size - 1;
-
-    strncpy(path_out, start, len);
-    path_out[len] = '\0';
 }
 
 const char *get_content_type(const char *path)
