@@ -107,31 +107,18 @@ int main(void)
 
             const char *content_type = get_content_type(file_path);
 
-            // レスポンスを書く（サイズは動的に）
-            size_t content_length = file_data.size;
-            size_t response_size = content_length + 512;
-            char *response = malloc(response_size);
+            char header[512];
+            int header_len = snprintf(header, sizeof(header),
+                                      "HTTP/1.1 200 OK\r\n"
+                                      "Content-Type: %s\r\n"
+                                      "Content-Length: %zu\r\n"
+                                      "Connection: close\r\n"
+                                      "\r\n",
+                                      content_type, file_data.size);
 
-            if (response == NULL)
-            {
-                printf("error: allocate response\n");
-                free(file_data.data);
-                close(client_fd);
-                continue;
-            }
-
-            int len = snprintf(response, response_size,
-                               "HTTP/1.1 200 OK\r\n"
-                               "Content-Type: %s\r\n"
-                               "Content-Length: %zu\r\n"
-                               "Connection: close\r\n"
-                               "\r\n"
-                               "%s",
-                               content_type, file_data.size, file_data.data);
-
-            write(client_fd, response, len);
+            write(client_fd, header, header_len);
+            write(client_fd, file_data.data, file_data.size);
             free(file_data.data);
-            free(response);
         }
 
         // ソケットを閉じる
