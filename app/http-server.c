@@ -248,34 +248,27 @@ void build_file_path(const char *request_path, char *full_path, size_t size)
 {
     const char *base = "/var/www/html";
 
+    if (strstr(request_path, "..") != NULL)
+    {
+        full_path[0] = '\0';
+        return;
+    }
+
     if (strcmp(request_path, "/") == 0)
     {
+        snprintf(full_path, size, "%s/index.html", base);
+
+        FILE *file = fopen(full_path, "r");
+
+        if (file != NULL)
+        {
+            fclose(file);
+            return;
+        }
+
         snprintf(full_path, size, "%s/http-server.html", base);
+        return;
     }
-    else
-    {
-        if (strncmp(request_path, "./", 2) == 0)
-        {
-            snprintf(full_path, size, "%s%s", base, request_path + 1);
-        }
-        else
-        {
-            snprintf(full_path, size, "%s%s", base, request_path);
-        }
 
-        const char *ext = strrchr(full_path, '.');
-        const char *last_slash = strrchr(full_path, '/');
-
-        if (ext == NULL || (last_slash != NULL && ext < last_slash))
-        {
-            size_t len = strlen(full_path);
-
-            if (len > 0 && full_path[len - 1] != '/')
-            {
-                strncat(full_path, "/", size - len - 1);
-                len++;
-            }
-            strncat(full_path, "index.html", size - len - 1);
-        }
-    }
+    snprintf(full_path, size, "%s%s", base, request_path);
 }
