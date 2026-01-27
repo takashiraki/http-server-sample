@@ -1,7 +1,8 @@
 {
     "name": "http server",
     "build": {
-        "dockerfile": "../Dockerfile"
+        "dockerfile": "../Dockerfile",
+        "context": ".."
     },
     "forwardPorts": [
         8080
