@@ -272,3 +272,7 @@ void build_file_path(const char *request_path, char *full_path, size_t size)
 
     snprintf(full_path, size, "%s%s", base, request_path);
 }
+
+ssize_t read_http_request(int fd, char *buffer, size_t buffer_size) {
+    size_t total = 0;
+}
