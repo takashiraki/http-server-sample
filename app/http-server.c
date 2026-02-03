@@ -276,10 +276,10 @@ void build_file_path(const char *request_path, char *full_path, size_t size)
 }
 
 ssize_t read_http_request(int fd, char *buffer, size_t buffer_size) {
-    size_t total = 0;
+    ssize_t total = 0;
     ssize_t n;
 
-    while (total < buffer_size - 1) {
+    while (total < (ssize_t)(buffer_size - 1)) {
         n = read(fd, buffer + total, buffer_size - 1 - total);
 
         if (n < 0) {
@@ -291,8 +291,24 @@ ssize_t read_http_request(int fd, char *buffer, size_t buffer_size) {
             break;
         }
 
-        for (size_t i = (total >= HEADER_END_LEN ? total - n - HEADER_END_OVERLAP : 0); i < total - HEADER_END_LEN; i++) {
-            //
+        total += n;
+
+        ssize_t start = total - n - HEADER_END_OVERLAP;
+        if (start < 0) {
+            start = 0;
+        }
+
+        for (size_t i = start; i + HEADER_END_LEN <= total; i++) {
+            if (buffer[i] == '\r' &&
+                buffer[i + 1] == '\n' &&
+                buffer[i + 2] == '\r' &&
+                buffer[i + 3] == '\n') {
+                buffer[total] = '\0';
+                return total;
+            }
         }
     }
+
+    buffer[total] = '\0';
+    return total;
 }
