@@ -5,6 +5,8 @@
 #include <unistd.h>
 
 const int LOOP_INFINITY = 1;
+const int CRLF_SIZE = 4;
+const int BOUNDARY_CRLF_SIZE = 3;
 
 typedef struct
 {
@@ -275,4 +277,22 @@ void build_file_path(const char *request_path, char *full_path, size_t size)
 
 ssize_t read_http_request(int fd, char *buffer, size_t buffer_size) {
     size_t total = 0;
+    ssize_t n;
+
+    while (total < buffer_size - 1) {
+        n = read(fd, buffer + total, buffer_size - 1 - total);
+
+        if (n < 0) {
+            perror("read error");
+            return -1;
+        }
+
+        if (n == 0) {
+            break;
+        }
+
+        for (size_t i = (total >= CRLF_SIZE ? total - n - BOUNDARY_CRLF_SIZE : 0); i < total - CRLF_SIZE; i++) {
+            //
+        }
+    }
 }
