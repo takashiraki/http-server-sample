@@ -5,8 +5,8 @@
 #include <unistd.h>
 
 const int LOOP_INFINITY = 1;
-const int CRLF_SIZE = 4;
-const int BOUNDARY_CRLF_SIZE = 3;
+const int HEADER_END_LEN = 4;
+const int HEADER_END_OVERLAP = HEADER_END_LEN - 1;
 
 typedef struct
 {
@@ -291,7 +291,7 @@ ssize_t read_http_request(int fd, char *buffer, size_t buffer_size) {
             break;
         }
 
-        for (size_t i = (total >= CRLF_SIZE ? total - n - BOUNDARY_CRLF_SIZE : 0); i < total - CRLF_SIZE; i++) {
+        for (size_t i = (total >= HEADER_END_LEN ? total - n - HEADER_END_OVERLAP : 0); i < total - HEADER_END_LEN; i++) {
             //
         }
     }
