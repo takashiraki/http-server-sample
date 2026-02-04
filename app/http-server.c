@@ -17,6 +17,7 @@ typedef struct
 FileData read_file(const char *path);
 const char *get_content_type(const char *path);
 void build_file_path(const char *request_path, char *full_path, size_t size);
+ssize_t read_http_request(int fd, char *buffer, size_t buffer_size);
 
 int main(void)
 {
@@ -74,7 +75,7 @@ int main(void)
 
         // リクエストを読むよ
         char buffer[1024];
-        int n = read(client_fd, buffer, sizeof(buffer) - 1);
+        ssize_t n = read_http_request(client_fd, buffer, sizeof(buffer));
 
         if (n > 0)
         {
