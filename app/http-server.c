@@ -79,8 +79,6 @@ int main(void)
 
         if (n > 0)
         {
-            buffer[n] = '\0'; // null終端
-
             printf("REQUEST:\n%s\n", buffer);
 
             // ファイル読み込み
