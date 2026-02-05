@@ -15,8 +15,11 @@ typedef struct
 } FileData;
 
 FileData read_file(const char *path);
+
 const char *get_content_type(const char *path);
+
 void build_file_path(const char *request_path, char *full_path, size_t size);
+
 ssize_t read_http_request(int fd, char *buffer, size_t buffer_size);
 
 int main(void)
@@ -73,108 +76,11 @@ int main(void)
             return 1;
         }
 
-        // リクエストを読むよ
-        char buffer[1024];
-        ssize_t n = read_http_request(client_fd, buffer, sizeof(buffer));
+        pid_t pid = fork();
 
-        if (n > 0)
+        if (pid < 0)
         {
-            printf("REQUEST:\n%s\n", buffer);
-
-            // ファイル読み込み
-            char request_path[256];
-
-            // メソッド読むよ（GETのみ対応）
-            char method[8];
-
-            if (sscanf(buffer, "%7s %255s", method, request_path) != 2)
-            {
-                // 400返す
-                printf("error: parse method\n");
-                int len = snprintf(buffer, sizeof(buffer),
-                                   "HTTP/1.1 400 Bad Request\r\n"
-                                   "Content-Type: text/html; charset=utf-8\r\n"
-                                   "Content-Length: 0\r\n"
-                                   "Connection: close\r\n"
-                                   "\r\n");
-                write(client_fd, buffer, len);
-                close(client_fd);
-                continue;
-            }
-
-            if (strcmp(method, "GET") != 0)
-            {
-                // 405返す
-                printf("error: method not allowed\n");
-                int len = snprintf(buffer, sizeof(buffer),
-                                   "HTTP/1.1 405 Method Not Allowed\r\n"
-                                   "Content-Type: text/html; charset=utf-8\r\n"
-                                   "Content-Length: 0\r\n"
-                                   "Connection: close\r\n"
-                                   "\r\n");
-                write(client_fd, buffer, len);
-                close(client_fd);
-                continue;
-            }
-
-            char file_path[512];
-            build_file_path(request_path, file_path, sizeof(file_path));
-
-            FileData file_data = read_file(file_path);
-
-            if (file_data.data == NULL)
-            {
-                printf("error: read content\n");
-                int len = snprintf(buffer, sizeof(buffer),
-                                   "HTTP/1.1 404 Not Found\r\n"
-                                   "Content-Type: text/html; charset=utf-8\r\n"
-                                   "Content-Length: 0\r\n"
-                                   "Connection: close\r\n"
-                                   "\r\n");
-                write(client_fd, buffer, len);
-                close(client_fd);
-                continue;
-            }
-
-            const char *content_type = get_content_type(file_path);
-
-            char header[512];
-            int header_len = snprintf(header, sizeof(header),
-                                      "HTTP/1.1 200 OK\r\n"
-                                      "Content-Type: %s\r\n"
-                                      "Content-Length: %zu\r\n"
-                                      "Connection: close\r\n"
-                                      "\r\n",
-                                      content_type, file_data.size);
-
-            ssize_t header_written = 0;
-            while (header_written < header_len)
-            {
-                ssize_t written = write(client_fd, header + header_written, header_len - header_written);
-                if (written <= 0)
-                {
-                    perror("write failed");
-                    goto cleanup;
-                }
-
-                header_written += written;
-            }
-
-            ssize_t body_written = 0;
-            while (body_written < file_data.size)
-            {
-                ssize_t written = write(client_fd, file_data.data + body_written, file_data.size - body_written);
-                if (written <= 0)
-                {
-                    perror("write failed");
-                    goto cleanup;
-                }
-
-                body_written += written;
-            }
-
-        cleanup:
-            free(file_data.data);
+            perror("");
         }
 
         // ソケットを閉じる
@@ -274,34 +180,41 @@ void build_file_path(const char *request_path, char *full_path, size_t size)
     snprintf(full_path, size, "%s%s", base, request_path);
 }
 
-ssize_t read_http_request(int fd, char *buffer, size_t buffer_size) {
+ssize_t read_http_request(int fd, char *buffer, size_t buffer_size)
+{
     ssize_t total = 0;
     ssize_t n;
 
-    while (total < (ssize_t)(buffer_size - 1)) {
+    while (total < (ssize_t)(buffer_size - 1))
+    {
         n = read(fd, buffer + total, buffer_size - 1 - total);
 
-        if (n < 0) {
+        if (n < 0)
+        {
             perror("read error");
             return -1;
         }
 
-        if (n == 0) {
+        if (n == 0)
+        {
             break;
         }
 
         total += n;
 
         ssize_t start = total - n - HEADER_END_OVERLAP;
-        if (start < 0) {
+        if (start < 0)
+        {
             start = 0;
         }
 
-        for (size_t i = start; i + HEADER_END_LEN <= total; i++) {
+        for (ssize_t i = start; i + HEADER_END_LEN <= total; i++)
+        {
             if (buffer[i] == '\r' &&
                 buffer[i + 1] == '\n' &&
                 buffer[i + 2] == '\r' &&
-                buffer[i + 3] == '\n') {
+                buffer[i + 3] == '\n')
+            {
                 buffer[total] = '\0';
                 return total;
             }
@@ -310,4 +223,103 @@ ssize_t read_http_request(int fd, char *buffer, size_t buffer_size) {
 
     buffer[total] = '\0';
     return total;
+}
+
+void handle_client(int client_fd)
+{
+    char buffer[1024];
+
+    printf("REQUEST:\n%s\n", buffer);
+
+    // ファイル読み込み
+    char request_path[256];
+
+    // メソッド読むよ（GETのみ対応）
+    char method[8];
+    int len;
+
+    if (sscanf(buffer, "%7s %255s", method, request_path) != 2)
+    {
+        // 400返す
+        printf("error: parse method\n");
+        len = snprintf(buffer, sizeof(buffer),
+                       "HTTP/1.1 400 Bad Request\r\n"
+                       "Content-Type: text/html; charset=utf-8\r\n"
+                       "Content-Length: 0\r\n"
+                       "Connection: close\r\n"
+                       "\r\n");
+        write(client_fd, buffer, len);
+        return;
+        ;
+    }
+
+    if (strcmp(method, "GET") != 0)
+    {
+        // 405返す
+        printf("error: method not allowed\n");
+        len = snprintf(buffer, sizeof(buffer),
+                       "HTTP/1.1 405 Method Not Allowed\r\n"
+                       "Content-Type: text/html; charset=utf-8\r\n"
+                       "Content-Length: 0\r\n"
+                       "Connection: close\r\n"
+                       "\r\n");
+        write(client_fd, buffer, len);
+        return;
+    }
+
+    char file_path[512];
+    build_file_path(request_path, file_path, sizeof(file_path));
+
+    FileData file_data = read_file(file_path);
+
+    if (file_data.data == NULL)
+    {
+        printf("error: read content\n");
+        len = snprintf(buffer, sizeof(buffer),
+                       "HTTP/1.1 404 Not Found\r\n"
+                       "Content-Type: text/html; charset=utf-8\r\n"
+                       "Content-Length: 0\r\n"
+                       "Connection: close\r\n"
+                       "\r\n");
+        write(client_fd, buffer, len);
+        return;
+    }
+
+    const char *content_type = get_content_type(file_path);
+
+    char header[512];
+    int header_len = snprintf(header, sizeof(header),
+                              "HTTP/1.1 200 OK\r\n"
+                              "Content-Type: %s\r\n"
+                              "Content-Length: %zu\r\n"
+                              "Connection: close\r\n"
+                              "\r\n",
+                              content_type, file_data.size);
+
+    ssize_t header_written = 0;
+    while (header_written < header_len)
+    {
+        ssize_t written = write(client_fd, header + header_written, header_len - header_written);
+        if (written <= 0)
+        {
+            perror("write failed");
+            return;
+        }
+
+        header_written += written;
+    }
+
+    ssize_t body_written = 0;
+    while (body_written < file_data.size)
+    {
+        ssize_t written = write(client_fd, file_data.data + body_written, file_data.size - body_written);
+        if (written <= 0)
+        {
+            perror("write failed");
+        }
+
+        body_written += written;
+    }
+
+    free(file_data.data);
 }
