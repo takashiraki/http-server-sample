@@ -1,8 +1,11 @@
+#define _POSIX_C_SOURCE 200809L
 #include <arpa/inet.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <signal.h>
+#include <sys/wait.h>
 
 const int LOOP_INFINITY = 1;
 const int HEADER_END_LEN = 4;
@@ -22,6 +25,10 @@ void build_file_path(const char *request_path, char *full_path, size_t size);
 
 ssize_t read_http_request(int fd, char *buffer, size_t buffer_size);
 
+void handle_client(int client_fd);
+
+void singchld_handler(int sig);
+
 int main(void)
 {
     // 待ち受けソケット
@@ -32,6 +39,17 @@ int main(void)
 
     // v4アドレスとポートなど
     struct sockaddr_in addr;
+
+    struct sigaction sa;
+    sa.sa_handler = singchld_handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART | SA_NOCLDSTOP;
+
+    if (sigaction(SIGCHLD, &sa, NULL) == -1)
+    {
+        perror("sigaction failed");
+        return 1;
+    }
 
     // AF_INETはIPv4を使うことを示す定数
     // SOCKET_STREAMはTCPを使うことを示す定数
@@ -80,7 +98,19 @@ int main(void)
 
         if (pid < 0)
         {
-            perror("");
+            perror("fork failed");
+            close(client_fd);
+            continue;
+        }
+
+        if (pid == 0)
+        {
+            close(server_fd);
+
+            handle_client(client_fd);
+
+            close(client_fd);
+            exit(0);
         }
 
         // ソケットを閉じる
@@ -228,6 +258,13 @@ ssize_t read_http_request(int fd, char *buffer, size_t buffer_size)
 void handle_client(int client_fd)
 {
     char buffer[1024];
+    ssize_t request_size = read_http_request(client_fd, buffer, sizeof(buffer));
+
+    if (request_size < 0)
+    {
+        // 読み込みエラー
+        return;
+    }
 
     printf("REQUEST:\n%s\n", buffer);
 
@@ -322,4 +359,12 @@ void handle_client(int client_fd)
     }
 
     free(file_data.data);
+}
+
+void singchld_handler(int sig)
+{
+    (void)sig;
+
+    while (waitpid(-1, NULL, WNOHANG) > 0)
+        ;
 }
