@@ -20,6 +20,9 @@
                     "description": "Enable pretty-printing for gdb",
                     "text": "-enable-pretty-printing",
                     "ignoreFailures": true
+                },
+                {
+                    "text": "set follow-fork-mode child"
                 }
             ],
             "preLaunchTask": "C/C++: gcc アクティブなファイルのビルド",
