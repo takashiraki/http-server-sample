@@ -105,6 +105,7 @@ int main(void)
 
         if (pid == 0)
         {
+            printf("Child process ID: %d\n", getpid());
             close(server_fd);
 
             handle_client(client_fd);
@@ -347,7 +348,7 @@ void handle_client(int client_fd)
     }
 
     ssize_t body_written = 0;
-    while (body_written < file_data.size)
+    while (body_written < (ssize_t)(file_data.size))
     {
         ssize_t written = write(client_fd, file_data.data + body_written, file_data.size - body_written);
         if (written <= 0)
