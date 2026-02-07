@@ -94,6 +94,9 @@ int main(void)
             return 1;
         }
 
+        printf("Accepted connection, client_fd=%d\n", client_fd);
+        printf("Parenting process ID: %d\n", getpid());
+
         pid_t pid = fork();
 
         if (pid < 0)
