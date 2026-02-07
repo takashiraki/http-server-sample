@@ -55,6 +55,19 @@ int main(void)
     // SOCKET_STREAMはTCPを使うことを示す定数
     // 0はプロトコル自動選択
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_fd < 0)
+    {
+        perror("socket failed");
+        return 1;
+    }
+
+    int yes = 1;
+
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) < 0)
+    {
+        perror("setsockopt failed");
+        return 1;
+    }
 
     // アドレス設定（ゼロ初期化）
     memset(&addr, 0, sizeof(addr));
