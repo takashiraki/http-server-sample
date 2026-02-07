@@ -319,34 +319,46 @@
                 </div>
             </div>
 
-            <!-- <div class="section">
-                <h2>Getting Started</h2>
-                <ol class="steps">
-                    <li>
-                        <strong>Clone the repository</strong><br>
-                        Clone this project to your local machine
-                    </li>
-                    <li>
-                        <strong>Build Docker image</strong><br>
-                        <div class="code-block" data-language="bash">
-                            <pre>docker build -t http-server-sample .</pre>
-                        </div>
-                    </li>
-                    <li>
-                        <strong>Run the container</strong><br>
-                        <div class="code-block" data-language="bash">
-                            <pre>docker run -p 8080:8080 http-server-sample</pre>
-                        </div>
-                    </li>
-                    <li>
-                        <strong>Test the server</strong><br>
-                        Access <code>http://localhost:8080</code> via browser or curl
-                        <div class="code-block" data-language="bash">
-                            <pre>curl http://localhost:8080</pre>
-                        </div>
-                    </li>
-                </ol>
-            </div> -->
+            <div class="section">
+                <h2>POST Request Test</h2>
+                <p>
+                    This form sends a simple <span class="highlight">POST</span> request to the server.
+                    You can use it to test your minimal C HTTP server implementation.
+                </p>
+
+                <form action="/post" method="POST" style="margin-top:2rem; max-width:600px;">
+                    <div style="margin-bottom:1.5rem;">
+                        <label style="display:block; font-weight:600; margin-bottom:0.5rem;">
+                            Message
+                        </label>
+                        <input type="text" name="message"
+                            style="width:100%; padding:0.9rem; border:1px solid #000; font-size:1rem;"
+                            placeholder="Type something..." required>
+                    </div>
+
+                    <div style="margin-bottom:1.5rem;">
+                        <label style="display:block; font-weight:600; margin-bottom:0.5rem;">
+                            Name
+                        </label>
+                        <input type="text" name="name"
+                            style="width:100%; padding:0.9rem; border:1px solid #000; font-size:1rem;"
+                            placeholder="Your name">
+                    </div>
+
+                    <button type="submit"
+                        style="background:#000; color:#fff; border:none; padding:1rem 2rem; font-size:1rem; font-weight:600; cursor:pointer;">
+                        Send POST Request
+                    </button>
+                </form>
+
+                <div class="code-block" data-language="http">
+                    <pre>POST /post HTTP/1.1
+                        Content-Type: application/x-www-form-urlencoded
+                        
+                        message=hello&name=test
+                    </pre>
+                </div>
+            </div>
         </div>
 
         <footer>
