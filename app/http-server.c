@@ -29,6 +29,8 @@ void handle_client(int client_fd);
 
 void singchld_handler(int sig);
 
+void handle_get(int client_fd, const char *request_path);
+
 int main(void)
 {
     // 待ち受けソケット
@@ -307,7 +309,11 @@ void handle_client(int client_fd)
         ;
     }
 
-    if (strcmp(method, "GET") != 0)
+    if (strcmp(method, "GET") == 0)
+    {
+        handle_get(client_fd, request_path);
+    }
+    else
     {
         // 405返す
         printf("error: method not allowed\n");
@@ -320,11 +326,25 @@ void handle_client(int client_fd)
         write(client_fd, buffer, len);
         return;
     }
+}
 
+void singchld_handler(int sig)
+{
+    (void)sig;
+
+    while (waitpid(-1, NULL, WNOHANG) > 0)
+        ;
+}
+
+void handle_get(int client_fd, const char *request_path)
+{
     char file_path[512];
+    char buffer[1024];
     build_file_path(request_path, file_path, sizeof(file_path));
 
     FileData file_data = read_file(file_path);
+
+    int len;
 
     if (file_data.data == NULL)
     {
@@ -376,12 +396,4 @@ void handle_client(int client_fd)
     }
 
     free(file_data.data);
-}
-
-void singchld_handler(int sig)
-{
-    (void)sig;
-
-    while (waitpid(-1, NULL, WNOHANG) > 0)
-        ;
 }
