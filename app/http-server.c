@@ -31,6 +31,8 @@ void singchld_handler(int sig);
 
 void handle_get(int client_fd, const char *request_path);
 
+void send_response(int client_fd, const char *status, const char *content_type, const void *body, const size_t body_size);
+
 int main(void)
 {
     // 待ち受けソケット
@@ -345,31 +347,47 @@ void handle_get(int client_fd, const char *request_path)
     FileData file_data = read_file(file_path);
 
     int len;
+    const char *status;
 
     if (file_data.data == NULL)
     {
         printf("error: read content\n");
-        len = snprintf(buffer, sizeof(buffer),
-                       "HTTP/1.1 404 Not Found\r\n"
-                       "Content-Type: text/html; charset=utf-8\r\n"
-                       "Content-Length: 0\r\n"
-                       "Connection: close\r\n"
-                       "\r\n");
-        write(client_fd, buffer, len);
-        return;
+        status = "404 Not Found";
+    }
+    else
+    {
+        status = "200 OK";
     }
 
     const char *content_type = get_content_type(file_path);
 
+    send_response(client_fd, status, content_type, file_data.data, file_data.size);
+
+    free(file_data.data);
+}
+
+void send_response(int client_fd, const char *status, const char *content_type, const void *body, const size_t body_size)
+{
+    // ヘッダー生成
     char header[512];
+
+    if (content_type == NULL)
+    {
+        content_type = "text/plain";
+    }
+
     int header_len = snprintf(header, sizeof(header),
-                              "HTTP/1.1 200 OK\r\n"
+                              "HTTP/1.1 %s\r\n"
                               "Content-Type: %s\r\n"
                               "Content-Length: %zu\r\n"
                               "Connection: close\r\n"
                               "\r\n",
-                              content_type, file_data.size);
+                              status, content_type, body_size);
 
+    // ボディー生成
+    const char *p = body;
+
+    // レスポンス返す
     ssize_t header_written = 0;
     while (header_written < header_len)
     {
@@ -384,16 +402,15 @@ void handle_get(int client_fd, const char *request_path)
     }
 
     ssize_t body_written = 0;
-    while (body_written < (ssize_t)(file_data.size))
+    while (body_written < (ssize_t)body_size)
     {
-        ssize_t written = write(client_fd, file_data.data + body_written, file_data.size - body_written);
+        ssize_t written = write(client_fd, p + body_written, body_size - body_written);
         if (written <= 0)
         {
             perror("write failed");
+            return;
         }
 
         body_written += written;
     }
-
-    free(file_data.data);
 }
