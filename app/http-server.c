@@ -192,7 +192,7 @@ const char *get_content_type(const char *path)
         return "application/json";
     if (strcmp(ext, ".png") == 0)
         return "image/png";
-    if (strcmp(ext, ".favicon.ico") == 0)
+    if (strcmp(ext, ".ico") == 0)
         return "image/png";
     if (strcmp(ext, ".jpg") == 0 || strcmp(ext, ".jpeg") == 0)
         return "image/jpeg";
