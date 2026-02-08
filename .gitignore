@@ -1,6 +1,7 @@
 .idea
 /app/*
 !/app/*.c
+!/app/*.h
 
 /var/*
 !/var/www/html/http-server.html
