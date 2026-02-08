@@ -230,6 +230,136 @@
             border: 1px solid #e0e0e0;
         }
 
+        /* Dark Mode Styles */
+        body.dark-mode {
+            background: #121212;
+            color: #e0e0e0;
+        }
+
+        .dark-mode .container {
+            background: #1e1e1e;
+        }
+
+        .dark-mode header {
+            background: #0a0a0a;
+            border-bottom-color: #333;
+        }
+
+        .dark-mode .section {
+            border-bottom-color: #333;
+        }
+
+        .dark-mode .section h2 {
+            color: #ffffff;
+        }
+
+        .dark-mode .section p {
+            color: #b0b0b0;
+        }
+
+        .dark-mode .feature-card {
+            background: #2a2a2a;
+            border-color: #404040;
+        }
+
+        .dark-mode .feature-card:hover {
+            background: #ffffff;
+            color: #000000;
+            border-color: #ffffff;
+        }
+
+        .dark-mode .code-block {
+            background: #0a0a0a;
+            border-color: #333;
+        }
+
+        .dark-mode .code-block::before {
+            background: #333;
+            color: #fff;
+        }
+
+        .dark-mode .tech-badge {
+            background: #333;
+            border-color: #555;
+        }
+
+        .dark-mode .tech-badge:hover {
+            background: #e0e0e0;
+            color: #000;
+        }
+
+        .dark-mode .steps li::before {
+            background: #ffffff;
+            color: #000000;
+        }
+
+        .dark-mode code {
+            background: #2a2a2a;
+            border-color: #404040;
+            color: #e0e0e0;
+        }
+
+        .dark-mode .highlight {
+            background: #ffffff;
+            color: #000000;
+        }
+
+        .dark-mode input {
+            background: #2a2a2a !important;
+            color: #e0e0e0 !important;
+            border-color: #555 !important;
+        }
+
+        .dark-mode input::placeholder {
+            color: #888 !important;
+        }
+
+        .dark-mode button[type="submit"] {
+            background: #fff !important;
+            color: #000 !important;
+        }
+
+        .dark-mode button[type="submit"]:hover {
+            background: #e0e0e0 !important;
+        }
+
+        .dark-mode footer {
+            background: #0a0a0a;
+        }
+
+        /* Theme Toggle Button */
+        .theme-toggle {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            background: #000;
+            color: #fff;
+            border: 2px solid #fff;
+            padding: 0.6rem 1rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            background: #fff;
+            color: #000;
+        }
+
+        .dark-mode .theme-toggle {
+            background: #fff;
+            color: #000;
+            border-color: #000;
+        }
+
+        .dark-mode .theme-toggle:hover {
+            background: #000;
+            color: #fff;
+            border-color: #fff;
+        }
+
         @media (max-width: 768px) {
             body {
                 padding: 1rem;
@@ -265,6 +395,7 @@
 </head>
 
 <body>
+    <button class="theme-toggle" onclick="toggleDarkMode()">Dark Mode</button>
     <div class="container">
         <header>
             <h1>HTTP Server</h1>
@@ -366,6 +497,32 @@
             <p style="margin-top: 0.5rem; font-size: 0.9rem;">Listens on port 8080 and responds with "Hello world"</p>
         </footer>
     </div>
+    <script>
+        function toggleDarkMode() {
+            const body = document.body;
+            const button = document.querySelector('.theme-toggle');
+            body.classList.toggle('dark-mode');
+
+            if (body.classList.contains('dark-mode')) {
+                button.textContent = 'Light Mode';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                button.textContent = 'Dark Mode';
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        // Load saved theme on page load
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            const button = document.querySelector('.theme-toggle');
+
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+                button.textContent = 'Light Mode';
+            }
+        })();
+    </script>
 </body>
 
 </html>
