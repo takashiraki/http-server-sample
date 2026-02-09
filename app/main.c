@@ -10,8 +10,6 @@
 #include "http.h"
 
 const int LOOP_INFINITY = 1;
-const int HEADER_END_LEN = 4;
-const int HEADER_END_OVERLAP = HEADER_END_LEN - 1;
 
 void singchld_handler(int sig);
 

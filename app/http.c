@@ -7,7 +7,6 @@
 #include <signal.h>
 #include <sys/wait.h>
 
-const int LOOP_INFINITY = 1;
 const int HEADER_END_LEN = 4;
 const int HEADER_END_OVERLAP = HEADER_END_LEN - 1;
 
