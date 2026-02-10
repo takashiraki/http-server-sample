@@ -14,9 +14,9 @@ WORKDIR /app
 
 COPY app /app
 
-RUN gcc -c app/http.c -o app/http.o
-RUN gcc -c app/main.c -o app/main.o
-RUN gcc app/main.o app/http.o -o app/http-server
+RUN gcc -c http.c -o http.o
+RUN gcc -c main.c -o main.o
+RUN gcc main.o http.o -o http-server
 
 EXPOSE 8080
 
