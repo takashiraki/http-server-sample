@@ -7,8 +7,9 @@
 #include <signal.h>
 #include <sys/wait.h>
 
-const int HEADER_END_LEN = 4;
-const int HEADER_END_OVERLAP = HEADER_END_LEN - 1;
+#define HEADER_END_LEN 4
+#define HEADER_END_OVERLAP (HEADER_END_LEN - 1)
+#define BUFFER_NULL_MARGIN 1
 
 typedef struct
 {
@@ -22,7 +23,7 @@ const char *get_content_type(const char *path);
 
 void build_file_path(const char *request_path, char *full_path, size_t size);
 
-ssize_t read_http_request(int fd, char *buffer, size_t buffer_size);
+ssize_t read_http_header(int fd, char *buffer, size_t buffer_size);
 
 void handle_client(int client_fd);
 
@@ -122,14 +123,14 @@ void build_file_path(const char *request_path, char *full_path, size_t size)
     snprintf(full_path, size, "%s%s", base, request_path);
 }
 
-ssize_t read_http_request(int fd, char *buffer, size_t buffer_size)
+ssize_t read_http_header(int fd, char *buffer, size_t buffer_size)
 {
     ssize_t total = 0;
     ssize_t n;
 
-    while (total < (ssize_t)(buffer_size - 1))
+    while (total < (ssize_t)(buffer_size - BUFFER_NULL_MARGIN))
     {
-        n = read(fd, buffer + total, buffer_size - 1 - total);
+        n = read(fd, buffer + total, buffer_size - BUFFER_NULL_MARGIN - total);
 
         if (n < 0)
         {
@@ -170,7 +171,7 @@ ssize_t read_http_request(int fd, char *buffer, size_t buffer_size)
 void handle_client(int client_fd)
 {
     char buffer[1024];
-    ssize_t request_size = read_http_request(client_fd, buffer, sizeof(buffer));
+    ssize_t request_size = read_http_header(client_fd, buffer, sizeof(buffer));
 
     if (request_size < 0)
     {
@@ -199,7 +200,6 @@ void handle_client(int client_fd)
                        "\r\n");
         write(client_fd, buffer, len);
         return;
-        ;
     }
 
     if (strcmp(method, "GET") == 0)
