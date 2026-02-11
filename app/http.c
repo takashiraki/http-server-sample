@@ -1,6 +1,7 @@
 #define _POSIX_C_SOURCE 200809L
 #include <arpa/inet.h>
 #include <string.h>
+#include <strings.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -10,6 +11,9 @@
 #define HEADER_END_LEN 4
 #define HEADER_END_OVERLAP (HEADER_END_LEN - 1)
 #define BUFFER_NULL_MARGIN 1
+#define INFINITY_LOOP 1
+#define LINE_END "\r\n"
+#define LINE_END_LEN 2
 
 typedef struct
 {
@@ -30,6 +34,8 @@ void handle_client(int client_fd);
 void singchld_handler(int sig);
 
 void handle_get(int client_fd, const char *request_path);
+
+ssize_t get_content_length(const char *header);
 
 void send_response(int client_fd, const char *status, const char *content_type, const void *body, const size_t body_size);
 
@@ -296,4 +302,62 @@ void send_response(int client_fd, const char *status, const char *content_type, 
 
         body_written += written;
     }
+}
+
+ssize_t get_content_length(const char *header)
+{
+    const char *line_start = header;
+    const char *CONTENT_LENGTH_PREFIX = "Content-Length:";
+    const size_t CONTENT_LENGTH_COUNT = strlen(CONTENT_LENGTH_PREFIX);
+
+    while (INFINITY_LOOP)
+    {
+        const char *line_end = strstr(line_start, LINE_END);
+
+        if (line_end == NULL)
+        {
+            // 見つからなかった
+            break;
+        }
+
+        if (line_end == line_start)
+        {
+            // 空行
+            break;
+        }
+
+        // リクエストそれぞれ行のコンテンツ長
+        const size_t line_length = line_end - line_start;
+
+        if (line_length < CONTENT_LENGTH_COUNT)
+        {
+            // 次のラインへ
+            line_start = line_end + LINE_END_LEN;
+            continue;
+        }
+
+        // ここに来た段階で、Content-Length:があるか確認
+
+        if (strncasecmp(line_start, CONTENT_LENGTH_PREFIX, CONTENT_LENGTH_COUNT) == 0)
+        {
+            //
+            // 取りあえずポインタ移動
+            const char *line_ptr = line_start + CONTENT_LENGTH_COUNT;
+
+            // スペースを飛ばす
+            while (line_ptr < line_end && *line_ptr == ' ')
+            {
+                line_ptr++;
+            }
+
+            // この段階でline_ptrは数字の前までポインタは来ている
+            return strtol(line_ptr, NULL, 10);
+        }
+
+        // 次のラインへ
+        line_start = line_end + LINE_END_LEN;
+    }
+
+    // なかった
+    return -1;
 }
