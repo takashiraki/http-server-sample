@@ -9,7 +9,7 @@
 
 #include "http.h"
 
-const int LOOP_INFINITY = 1;
+#define LOOP_INFINITY 1
 
 void singchld_handler(int sig);
 
