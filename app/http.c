@@ -7,9 +7,13 @@
 #include <unistd.h>
 #include <signal.h>
 #include <sys/wait.h>
+#include <errno.h>
 
 #define HEADER_END_LEN 4
+
+// \r\n\r\n の跨ぎ検出のため3byte戻る
 #define HEADER_END_OVERLAP (HEADER_END_LEN - 1)
+
 #define BUFFER_NULL_MARGIN 1
 #define INFINITY_LOOP 1
 #define LINE_END "\r\n"
@@ -140,13 +144,17 @@ ssize_t read_http_header(int fd, char *buffer, size_t buffer_size)
 
         if (n < 0)
         {
+            if (errno == EINTR)
+                continue;
+
             perror("read error");
             return -1;
         }
 
         if (n == 0)
         {
-            break;
+            // 途中で切れた
+            return -1;
         }
 
         total += n;
@@ -170,8 +178,9 @@ ssize_t read_http_header(int fd, char *buffer, size_t buffer_size)
         }
     }
 
-    buffer[total] = '\0';
-    return total;
+    // ヘッダー終端が見つからなかった
+    // or バッファオーバーフロー
+    return -1;
 }
 
 void handle_client(int client_fd)
