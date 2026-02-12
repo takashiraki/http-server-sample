@@ -31,7 +31,8 @@ const char *get_content_type(const char *path);
 
 void build_file_path(const char *request_path, char *full_path, size_t size);
 
-ssize_t read_http_header(int fd, char *buffer, size_t buffer_size);
+// socket(fd) → memory(buffer)
+ssize_t read_http_header(int fd, char *buffer, size_t buffer_size, ssize_t *header_length);
 
 void handle_client(int client_fd);
 
@@ -133,7 +134,9 @@ void build_file_path(const char *request_path, char *full_path, size_t size)
     snprintf(full_path, size, "%s%s", base, request_path);
 }
 
-ssize_t read_http_header(int fd, char *buffer, size_t buffer_size)
+// socket(fd) → memory(buffer)
+// あくまでソケットから来た内容をメモリに移すだけ
+ssize_t read_http_header(int fd, char *buffer, size_t buffer_size, ssize_t *header_length)
 {
     ssize_t total = 0;
     ssize_t n;
@@ -173,6 +176,7 @@ ssize_t read_http_header(int fd, char *buffer, size_t buffer_size)
                 buffer[i + 3] == '\n')
             {
                 buffer[total] = '\0';
+                *header_length = i + HEADER_END_LEN;
                 return total;
             }
         }
@@ -186,15 +190,23 @@ ssize_t read_http_header(int fd, char *buffer, size_t buffer_size)
 void handle_client(int client_fd)
 {
     char buffer[1024];
-    ssize_t request_size = read_http_header(client_fd, buffer, sizeof(buffer));
+    ssize_t header_size;
+
+    printf("handle_client started, fd=%d, pid=%d\n", client_fd, getpid());
+    fflush(stdout);
+
+    ssize_t request_size = read_http_header(client_fd, buffer, sizeof(buffer), &header_size);
 
     if (request_size < 0)
     {
         // 読み込みエラー
+        printf("ERROR: read_http_header failed, fd=%d\n", client_fd);
+        fflush(stdout);
         return;
     }
 
-    printf("REQUEST:\n%s\n", buffer);
+    printf("REQUEST:\n%.*s\n", (int)header_size, buffer);
+    fflush(stdout);
 
     // ファイル読み込み
     char request_path[256];
