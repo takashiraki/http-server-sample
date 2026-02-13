@@ -25,6 +25,14 @@ typedef struct
     size_t size;
 } FileData;
 
+typedef struct
+{
+    char method[8];
+    char path[256];
+    ssize_t content_length;
+    char content_type[64];
+} HttpRequest;
+
 FileData read_file(const char *path);
 
 const char *get_content_type(const char *path);
