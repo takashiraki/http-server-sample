@@ -19,6 +19,10 @@
 #define LINE_END "\r\n"
 #define LINE_END_LEN 2
 
+#define OK 0
+#define PARSE_ERROR -1
+#define INVALID_HEADER -2
+
 typedef struct
 {
     char *data;
@@ -193,6 +197,28 @@ ssize_t read_http_header(int fd, char *buffer, size_t buffer_size, ssize_t *head
     // ヘッダー終端が見つからなかった
     // or バッファオーバーフロー
     return -1;
+}
+
+// リクエスト解析
+int parse_http_request(const char *header, HttpRequest *request)
+{
+    char path[256];
+    char method[8];
+
+    // リクエストライン解析
+    if (sscanf(header, "%7s %255s", method, path) != 2)
+    {
+        return PARSE_ERROR;
+    }
+
+    strcpy(request->method, method);
+    strcpy(request->path, path);
+
+    // コンテンツ長
+    request->content_length = get_content_length(header);
+
+    // コンテンツタイプ
+    // 戻す
 }
 
 void handle_client(int client_fd)
