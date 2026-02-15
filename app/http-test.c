@@ -13,7 +13,6 @@ typedef struct
     char method[8];
     char path[256];
     ssize_t content_length;
-    char content_type[64];
 } HttpRequest;
 
 // 関数の宣言（ヘッダあればincludeでOK）
@@ -82,7 +81,6 @@ int main(void)
                &req) == OK);
     assert(strcmp(req.method, "GET") == 0);
     assert(strcmp(req.path, "/index.html") == 0);
-    assert(strcmp(req.content_type, "text/html") == 0);
     assert(req.content_length == -1);
 
     // 正常系: GET + CSS
@@ -93,7 +91,6 @@ int main(void)
                &req) == OK);
     assert(strcmp(req.method, "GET") == 0);
     assert(strcmp(req.path, "/style.css") == 0);
-    assert(strcmp(req.content_type, "text/css") == 0);
 
     // 正常系: GET + JavaScript
     memset(&req, 0, sizeof(req));
@@ -101,7 +98,6 @@ int main(void)
                "GET /app.js HTTP/1.1" CRLF
                    CRLF,
                &req) == OK);
-    assert(strcmp(req.content_type, "application/javascript") == 0);
 
     // 正常系: POST + Content-Length
     memset(&req, 0, sizeof(req));
@@ -120,7 +116,6 @@ int main(void)
                "GET /api HTTP/1.1" CRLF
                    CRLF,
                &req) == OK);
-    assert(strcmp(req.content_type, "text/html") == 0);
 
     // 正常系: JSON
     memset(&req, 0, sizeof(req));
@@ -128,7 +123,6 @@ int main(void)
                "GET /data.json HTTP/1.1" CRLF
                    CRLF,
                &req) == OK);
-    assert(strcmp(req.content_type, "application/json") == 0);
 
     // 正常系: PNG画像
     memset(&req, 0, sizeof(req));
@@ -136,7 +130,6 @@ int main(void)
                "GET /image.png HTTP/1.1" CRLF
                    CRLF,
                &req) == OK);
-    assert(strcmp(req.content_type, "image/png") == 0);
 
     // 異常系: 不正なフォーマット（メソッドのみ）
     memset(&req, 0, sizeof(req));

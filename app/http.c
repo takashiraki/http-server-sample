@@ -34,7 +34,6 @@ typedef struct
     char method[8];
     char path[256];
     ssize_t content_length;
-    char content_type[64];
 } HttpRequest;
 
 FileData read_file(const char *path);
@@ -216,9 +215,6 @@ int parse_http_request(const char *header, HttpRequest *request)
 
     // コンテンツ長
     request->content_length = get_content_length(header);
-
-    // コンテンツタイプ
-    strcpy(request->content_type, get_content_type(path));
 
     // 戻す
     return OK;
