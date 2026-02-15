@@ -230,6 +230,290 @@
             border: 1px solid #e0e0e0;
         }
 
+        /* Dark Mode Styles */
+        body.dark-mode {
+            background: #121212;
+            color: #e0e0e0;
+        }
+
+        .dark-mode .container {
+            background: #1e1e1e;
+        }
+
+        .dark-mode header {
+            background: #0a0a0a;
+            border-bottom-color: #333;
+        }
+
+        .dark-mode .section {
+            border-bottom-color: #333;
+        }
+
+        .dark-mode .section h2 {
+            color: #ffffff;
+        }
+
+        .dark-mode .section p {
+            color: #b0b0b0;
+        }
+
+        .dark-mode .feature-card {
+            background: #2a2a2a;
+            border-color: #404040;
+        }
+
+        .dark-mode .feature-card:hover {
+            background: #ffffff;
+            color: #000000;
+            border-color: #ffffff;
+        }
+
+        .dark-mode .code-block {
+            background: #0a0a0a;
+            border-color: #333;
+        }
+
+        .dark-mode .code-block::before {
+            background: #333;
+            color: #fff;
+        }
+
+        .dark-mode .tech-badge {
+            background: #333;
+            border-color: #555;
+        }
+
+        .dark-mode .tech-badge:hover {
+            background: #e0e0e0;
+            color: #000;
+        }
+
+        .dark-mode .steps li::before {
+            background: #ffffff;
+            color: #000000;
+        }
+
+        .dark-mode code {
+            background: #2a2a2a;
+            border-color: #404040;
+            color: #e0e0e0;
+        }
+
+        .dark-mode .highlight {
+            background: #ffffff;
+            color: #000000;
+        }
+
+        .dark-mode input {
+            background: #2a2a2a !important;
+            color: #e0e0e0 !important;
+            border-color: #555 !important;
+        }
+
+        .dark-mode input::placeholder {
+            color: #888 !important;
+        }
+
+        .dark-mode button[type="submit"] {
+            background: #fff !important;
+            color: #000 !important;
+        }
+
+        .dark-mode button[type="submit"]:hover {
+            background: #e0e0e0 !important;
+        }
+
+        .dark-mode footer {
+            background: #0a0a0a;
+        }
+
+        .dark-mode .top-nav {
+            background: #1a1a1a;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .dark-mode .top-nav a {
+            color: #ffffff;
+        }
+
+        .dark-mode .top-nav a:hover {
+            border-bottom-color: #ffffff;
+        }
+
+        .dark-mode .stat-card {
+            background: #333;
+            color: #fff;
+        }
+
+        .dark-mode .input-feedback.success {
+            color: #00ff00;
+        }
+
+        .dark-mode .input-feedback.error {
+            color: #ff6666;
+        }
+
+        .dark-mode #form-response {
+            background: #2a2a2a;
+            border-color: #555;
+        }
+
+        /* Navigation */
+        .top-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #000000;
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            z-index: 999;
+            transform: translateY(-100%);
+            transition: transform 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .top-nav.visible {
+            transform: translateY(0);
+        }
+
+        .top-nav a {
+            color: #fff;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            padding: 0.5rem 1rem;
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+
+        .top-nav a:hover {
+            border-bottom-color: #fff;
+        }
+
+        /* Server Status */
+        .server-status {
+            margin-top: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background: #00ff00;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .stat-card {
+            background: #000;
+            color: #fff;
+            padding: 2rem 1rem;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: scale(1.05);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        /* Fade in animation */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Input feedback */
+        .input-feedback {
+            display: block;
+            margin-top: 0.3rem;
+            font-size: 0.85rem;
+            min-height: 1.2rem;
+        }
+
+        .input-feedback.success {
+            color: #00aa00;
+        }
+
+        .input-feedback.error {
+            color: #aa0000;
+        }
+
+        /* Theme Toggle Button */
+        .theme-toggle {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            background: #000;
+            color: #fff;
+            border: 2px solid #fff;
+            padding: 0.6rem 1rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            background: #fff;
+            color: #000;
+        }
+
+        .dark-mode .theme-toggle {
+            background: #fff;
+            color: #000;
+            border-color: #000;
+        }
+
+        .dark-mode .theme-toggle:hover {
+            background: #000;
+            color: #fff;
+            border-color: #fff;
+        }
+
         @media (max-width: 768px) {
             body {
                 padding: 1rem;
@@ -265,14 +549,27 @@
 </head>
 
 <body>
+    <button class="theme-toggle" onclick="toggleDarkMode()">Dark Mode</button>
+
+    <nav class="top-nav">
+        <a href="#overview">Overview</a>
+        <a href="#features">Features</a>
+        <a href="#tech">Tech Stack</a>
+        <a href="#test">Test</a>
+    </nav>
+
     <div class="container">
         <header>
-            <h1>HTTP Server</h1>
+            <h1 id="typed-text"></h1>
             <p>A minimal HTTP server implementation in C</p>
+            <div class="server-status">
+                <span class="status-dot"></span>
+                <span id="server-time">Server Time: Loading...</span>
+            </div>
         </header>
 
         <div class="content">
-            <div class="section">
+            <div class="section fade-in" id="overview">
                 <h2>Overview</h2>
                 <p>
                     This project is a simple HTTP server implementation written in <span class="highlight">C</span>.
@@ -283,9 +580,28 @@
                     The server listens on port <span class="highlight">8080</span> and responds with "Hello world" to
                     incoming requests.
                 </p>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number" data-target="8080">0</div>
+                        <div class="stat-label">Port Number</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" data-target="100">0</div>
+                        <div class="stat-label">Lines of Code</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" data-target="1">0</div>
+                        <div class="stat-label">HTTP Protocol</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number"><span data-target="99">0</span>%</div>
+                        <div class="stat-label">Performance</div>
+                    </div>
+                </div>
             </div>
 
-            <div class="section">
+            <div class="section fade-in" id="features">
                 <h2>Features</h2>
                 <div class="features">
                     <div class="feature-card">
@@ -307,7 +623,7 @@
                 </div>
             </div>
 
-            <div class="section">
+            <div class="section fade-in" id="tech">
                 <h2>Tech Stack</h2>
                 <div class="tech-stack">
                     <span class="tech-badge">C</span>
@@ -319,34 +635,53 @@
                 </div>
             </div>
 
-            <!-- <div class="section">
-                <h2>Getting Started</h2>
-                <ol class="steps">
-                    <li>
-                        <strong>Clone the repository</strong><br>
-                        Clone this project to your local machine
-                    </li>
-                    <li>
-                        <strong>Build Docker image</strong><br>
-                        <div class="code-block" data-language="bash">
-                            <pre>docker build -t http-server-sample .</pre>
-                        </div>
-                    </li>
-                    <li>
-                        <strong>Run the container</strong><br>
-                        <div class="code-block" data-language="bash">
-                            <pre>docker run -p 8080:8080 http-server-sample</pre>
-                        </div>
-                    </li>
-                    <li>
-                        <strong>Test the server</strong><br>
-                        Access <code>http://localhost:8080</code> via browser or curl
-                        <div class="code-block" data-language="bash">
-                            <pre>curl http://localhost:8080</pre>
-                        </div>
-                    </li>
-                </ol>
-            </div> -->
+            <div class="section fade-in" id="test">
+                <h2>POST Request Test</h2>
+                <p>
+                    This form sends a simple <span class="highlight">POST</span> request to the server.
+                    You can use it to test your minimal C HTTP server implementation.
+                </p>
+
+                <form id="post-form" action="/post" method="POST" style="margin-top:2rem; max-width:600px;">
+                    <div style="margin-bottom:1.5rem;">
+                        <label style="display:block; font-weight:600; margin-bottom:0.5rem;">
+                            Message
+                        </label>
+                        <input type="text" name="message" id="message-input"
+                            style="width:100%; padding:0.9rem; border:1px solid #000; font-size:1rem;"
+                            placeholder="Type something..." required>
+                        <span class="input-feedback" id="message-feedback"></span>
+                    </div>
+
+                    <div style="margin-bottom:1.5rem;">
+                        <label style="display:block; font-weight:600; margin-bottom:0.5rem;">
+                            Name
+                        </label>
+                        <input type="text" name="name" id="name-input"
+                            style="width:100%; padding:0.9rem; border:1px solid #000; font-size:1rem;"
+                            placeholder="Your name">
+                        <span class="input-feedback" id="name-feedback"></span>
+                    </div>
+
+                    <button type="submit" id="submit-btn"
+                        style="background:#000; color:#fff; border:none; padding:1rem 2rem; font-size:1rem; font-weight:600; cursor:pointer; transition: all 0.3s ease;">
+                        Send POST Request
+                    </button>
+                </form>
+
+                <div id="form-response" style="margin-top:2rem; padding:1rem; display:none; border:1px solid #000;">
+                    <strong>Response:</strong>
+                    <pre id="response-content" style="margin-top:0.5rem; white-space:pre-wrap;"></pre>
+                </div>
+
+                <div class="code-block" data-language="http">
+                    <pre>POST /post HTTP/1.1
+                        Content-Type: application/x-www-form-urlencoded
+                        
+                        message=hello&name=test
+                    </pre>
+                </div>
+            </div>
         </div>
 
         <footer>
@@ -354,6 +689,331 @@
             <p style="margin-top: 0.5rem; font-size: 0.9rem;">Listens on port 8080 and responds with "Hello world"</p>
         </footer>
     </div>
+    <script>
+        // ========== Dark Mode Toggle ==========
+        function toggleDarkMode() {
+            const body = document.body;
+            const button = document.querySelector('.theme-toggle');
+            body.classList.toggle('dark-mode');
+
+            if (body.classList.contains('dark-mode')) {
+                button.textContent = 'Light Mode';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                button.textContent = 'Dark Mode';
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        // Load saved theme on page load
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            const button = document.querySelector('.theme-toggle');
+
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+                button.textContent = 'Light Mode';
+            }
+        })();
+
+        // ========== Typing Effect ==========
+        const text = "HTTP Server";
+        const typedTextElement = document.getElementById('typed-text');
+        let index = 0;
+
+        function typeWriter() {
+            if (index < text.length) {
+                typedTextElement.textContent += text.charAt(index);
+                index++;
+                setTimeout(typeWriter, 150);
+            } else {
+                typedTextElement.style.borderRight = 'none';
+            }
+        }
+
+        // Add cursor effect
+        typedTextElement.style.borderRight = '3px solid #fff';
+        typedTextElement.style.paddingRight = '5px';
+
+        // Start typing after a short delay
+        setTimeout(typeWriter, 500);
+
+        // ========== Server Time Display ==========
+        function updateServerTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', {
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            const dateString = now.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+            document.getElementById('server-time').textContent =
+                `Server Time: ${dateString} ${timeString}`;
+        }
+
+        updateServerTime();
+        setInterval(updateServerTime, 1000);
+
+        // ========== Smooth Scroll Navigation ==========
+        const nav = document.querySelector('.top-nav');
+        const navLinks = document.querySelectorAll('.top-nav a');
+
+        // Show navigation on scroll
+        let lastScroll = 0;
+        window.addEventListener('scroll', () => {
+            const currentScroll = window.pageYOffset;
+
+            if (currentScroll > 300) {
+                nav.classList.add('visible');
+            } else {
+                nav.classList.remove('visible');
+            }
+
+            lastScroll = currentScroll;
+        });
+
+        // Smooth scroll to sections
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = link.getAttribute('href').substring(1);
+                const targetSection = document.getElementById(targetId);
+
+                if (targetSection) {
+                    const offsetTop = targetSection.offsetTop - 80;
+                    window.scrollTo({
+                        top: offsetTop,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+
+        // ========== Intersection Observer for Fade-in Animations ==========
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+
+        // Observe all fade-in elements
+        document.querySelectorAll('.fade-in').forEach(el => {
+            observer.observe(el);
+        });
+
+        // ========== Counter Animation for Stats ==========
+        function animateCounter(element, target, duration = 2000) {
+            let start = 0;
+            const increment = target / (duration / 16);
+
+            const timer = setInterval(() => {
+                start += increment;
+                if (start >= target) {
+                    element.textContent = target;
+                    clearInterval(timer);
+                } else {
+                    element.textContent = Math.floor(start);
+                }
+            }, 16);
+        }
+
+        // Observe stats and animate when visible
+        const statsObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const statNumbers = entry.target.querySelectorAll('[data-target]');
+                    statNumbers.forEach(stat => {
+                        const target = parseInt(stat.getAttribute('data-target'));
+                        animateCounter(stat, target);
+                    });
+                    statsObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.5 });
+
+        const statsGrid = document.querySelector('.stats-grid');
+        if (statsGrid) {
+            statsObserver.observe(statsGrid);
+        }
+
+        // ========== Feature Card Interactions ==========
+        const featureCards = document.querySelectorAll('.feature-card');
+        featureCards.forEach((card, index) => {
+            card.style.animationDelay = `${index * 0.1}s`;
+
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-5px) scale(1.02)';
+            });
+
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = '';
+            });
+        });
+
+        // ========== Tech Badge Interactions ==========
+        const techBadges = document.querySelectorAll('.tech-badge');
+        techBadges.forEach((badge, index) => {
+            badge.style.animationDelay = `${index * 0.05}s`;
+
+            badge.addEventListener('click', () => {
+                badge.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    badge.style.transform = '';
+                }, 100);
+            });
+        });
+
+        // ========== Form Validation and Handling ==========
+        const form = document.getElementById('post-form');
+        const messageInput = document.getElementById('message-input');
+        const nameInput = document.getElementById('name-input');
+        const messageFeedback = document.getElementById('message-feedback');
+        const nameFeedback = document.getElementById('name-feedback');
+        const submitBtn = document.getElementById('submit-btn');
+        const formResponse = document.getElementById('form-response');
+        const responseContent = document.getElementById('response-content');
+
+        // Real-time validation
+        messageInput.addEventListener('input', () => {
+            const value = messageInput.value.trim();
+            if (value.length === 0) {
+                messageFeedback.textContent = '';
+                messageFeedback.className = 'input-feedback';
+            } else if (value.length < 3) {
+                messageFeedback.textContent = 'Message should be at least 3 characters';
+                messageFeedback.className = 'input-feedback error';
+            } else {
+                messageFeedback.textContent = '✓ Looks good';
+                messageFeedback.className = 'input-feedback success';
+            }
+        });
+
+        nameInput.addEventListener('input', () => {
+            const value = nameInput.value.trim();
+            if (value.length === 0) {
+                nameFeedback.textContent = 'Optional';
+                nameFeedback.className = 'input-feedback';
+            } else if (value.length < 2) {
+                nameFeedback.textContent = 'Name should be at least 2 characters';
+                nameFeedback.className = 'input-feedback error';
+            } else {
+                nameFeedback.textContent = '✓ Looks good';
+                nameFeedback.className = 'input-feedback success';
+            }
+        });
+
+        // Set initial feedback
+        nameFeedback.textContent = 'Optional';
+
+        // Form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Disable submit button
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Sending...';
+            submitBtn.style.opacity = '0.6';
+
+            // Get form data
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData);
+
+            // Simulate sending (you can replace this with actual fetch)
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                // Show response (whether success or error)
+                formResponse.style.display = 'block';
+
+                if (response.ok) {
+                    const text = await response.text();
+                    responseContent.textContent = text || 'POST request sent successfully!\n\nData sent:\n' +
+                        JSON.stringify(data, null, 2);
+                    formResponse.style.borderColor = '#00aa00';
+                } else {
+                    throw new Error(`Server responded with status: ${response.status}`);
+                }
+            } catch (error) {
+                // Show error or fallback message
+                formResponse.style.display = 'block';
+                formResponse.style.borderColor = '#aa0000';
+                responseContent.textContent =
+                    `Connection info:\n\nThis would send a POST request to: ${form.action}\n\n` +
+                    `Data:\n${JSON.stringify(data, null, 2)}\n\n` +
+                    `Note: ${error.message}`;
+            } finally {
+                // Re-enable submit button
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Send POST Request';
+                submitBtn.style.opacity = '1';
+
+                // Scroll to response
+                setTimeout(() => {
+                    formResponse.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 100);
+            }
+        });
+
+        // ========== Easter Egg: Konami Code ==========
+        const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+        let konamiIndex = 0;
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === konamiCode[konamiIndex]) {
+                konamiIndex++;
+                if (konamiIndex === konamiCode.length) {
+                    activateEasterEgg();
+                    konamiIndex = 0;
+                }
+            } else {
+                konamiIndex = 0;
+            }
+        });
+
+        function activateEasterEgg() {
+            const container = document.querySelector('.container');
+            container.style.animation = 'rainbow 2s ease-in-out';
+
+            // Add rainbow animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes rainbow {
+                    0% { filter: hue-rotate(0deg); }
+                    100% { filter: hue-rotate(360deg); }
+                }
+            `;
+            document.head.appendChild(style);
+
+            setTimeout(() => {
+                container.style.animation = '';
+            }, 2000);
+
+            console.log('🎮 Konami Code activated! You found the easter egg!');
+        }
+
+        // ========== Performance Monitoring ==========
+        window.addEventListener('load', () => {
+            const loadTime = performance.timing.domContentLoadedEventEnd - performance.timing.navigationStart;
+            console.log(`⚡ Page loaded in ${loadTime}ms`);
+            console.log(`📊 HTTP Server Demo - Modern Interactive Version`);
+            console.log(`💡 Tip: Try the Konami Code! ⬆⬆⬇⬇⬅➡⬅➡BA`);
+        });
+    </script>
 </body>
 
 </html>

@@ -1,0 +1,27 @@
+{
+    "name": "http server",
+    "build": {
+        "dockerfile": "../Dockerfile",
+        "context": ".."
+    },
+    "forwardPorts": [
+        8080
+    ],
+    "mounts": [
+        "source=${localWorkspaceFolder}/var/www/html,target=/var/www/html,type=bind"
+    ],
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode.cpptools-extension-pack",
+                "Anthropic.claude-code",
+                "ms-vscode.hexeditor",
+                "ms-vscode.cmake-tools"
+            ]
+        }
+    },
+    "features": {
+        "ghcr.io/devcontainers/features/node:1": {},
+        "ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {}
+    }
+}
