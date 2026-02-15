@@ -218,7 +218,10 @@ int parse_http_request(const char *header, HttpRequest *request)
     request->content_length = get_content_length(header);
 
     // コンテンツタイプ
+    strcpy(request->content_type, get_content_type(path));
+
     // 戻す
+    return OK;
 }
 
 void handle_client(int client_fd)
@@ -285,12 +288,10 @@ void handle_client(int client_fd)
 void handle_get(int client_fd, const char *request_path)
 {
     char file_path[512];
-    char buffer[1024];
     build_file_path(request_path, file_path, sizeof(file_path));
 
     FileData file_data = read_file(file_path);
 
-    int len;
     const char *status;
 
     if (file_data.data == NULL)
