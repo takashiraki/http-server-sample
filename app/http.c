@@ -35,6 +35,7 @@ typedef struct
 {
     char method[8];
     char path[256];
+    char type[16];
     ssize_t content_length;
 } HttpRequest;
 
@@ -203,6 +204,7 @@ int parse_http_request(const char *header,
                        HttpRequest *request)
 {
     char method[8];
+    char type[16];
     char path[256];
 
     if (sscanf(header, "%7s %255s", method, path) != 2)
@@ -395,6 +397,11 @@ void handle_post(int client_fd, HttpRequest req, char *buffer, ssize_t header_si
                   "text/plain",
                   "POST received",
                   strlen("POST received"));
+}
+
+void handle_php(int client_fd, HttpRequest req, char *buffer, ssize_t header_size, ssize_t request_size)
+{
+    //
 }
 
 /* =========================
