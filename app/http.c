@@ -49,9 +49,9 @@ ssize_t read_http_header(int fd, char *buffer, size_t buffer_size, ssize_t *head
 int parse_http_request(const char *header, HttpRequest *request);
 void handle_client(int client_fd);
 void singchld_handler(int sig);
-void handle_get(int client_fd, const char *request_path, const char *content_type);
+void handle_get(int client_fd, const char *request_path, const char *content_type, const char *file_path, const char *request_file_type);
 ssize_t get_content_length(const char *header);
-void handle_post(int client_fd, HttpRequest req, char *buffer, ssize_t header_size, ssize_t request_size);
+void handle_post(int client_fd, HttpRequest req, char *buffer, ssize_t header_size, ssize_t request_size, const char *content_type, const char *request_file_type);
 void send_response(int client_fd, const char *status, const char *content_type, const void *body, const size_t body_size);
 
 /* =========================
@@ -110,6 +110,19 @@ const char *get_content_type(const char *path)
         return "image/jpeg";
 
     return "text/plain";
+}
+
+const char *get_request_file_type(const char *path)
+{
+    const char *ext = strrchr(path, '.');
+
+    if (ext == NULL)
+        return "text/html";
+
+    if (strcmp(ext, ".php") == 0)
+        return "php";
+
+    return "static";
 }
 
 /* =========================
@@ -268,17 +281,15 @@ void handle_client(int client_fd)
     build_file_path(req.path, file_path, sizeof(file_path));
 
     const char *content_type = get_content_type(file_path);
+    const char *request_file_type = get_request_file_type(file_path);
 
     if (strcmp(req.method, "GET") == 0)
     {
-        handle_get(client_fd, req.path, content_type);
+        handle_get(client_fd, req.path, content_type, file_path, request_file_type);
     }
     else if (strcmp(req.method, "POST") == 0)
     {
-        handle_post(client_fd, req,
-                    buffer,
-                    header_size,
-                    request_size);
+        handle_post(client_fd, req, buffer, header_size, request_size, content_type, request_file_type);
     }
     else
     {
@@ -297,17 +308,19 @@ void handle_client(int client_fd)
    GET Handling
 ========================= */
 
-void handle_get(int client_fd, const char *request_path, const char *content_type)
+void handle_get(int client_fd, const char *request_path, const char *content_type, const char *file_path, const char *request_file_type)
 {
-    char file_path[512];
-
-    build_file_path(request_path,
-                    file_path,
-                    sizeof(file_path));
-
-    FileData file_data = read_file(file_path);
-
     const char *status;
+    FileData file_data;
+
+    if (strcmp(request_file_type, "static") == 0)
+    {
+        file_data = read_file(file_path);
+    }
+    else if (strcmp(request_file_type, "php") == 0)
+    {
+        // ここにPHPの処理書くよ
+    }
 
     if (file_data.data == NULL)
     {
@@ -332,7 +345,7 @@ void handle_get(int client_fd, const char *request_path, const char *content_typ
    POST Handling
 ========================= */
 
-void handle_post(int client_fd, HttpRequest req, char *buffer, ssize_t header_size, ssize_t request_size)
+void handle_post(int client_fd, HttpRequest req, char *buffer, ssize_t header_size, ssize_t request_size, const char *content_type, const char *request_file_type)
 {
     if (req.content_length < 0)
     {
