@@ -35,7 +35,6 @@ typedef struct
 {
     char method[8];
     char path[256];
-    char type[16];
     ssize_t content_length;
 } HttpRequest;
 
@@ -50,7 +49,7 @@ ssize_t read_http_header(int fd, char *buffer, size_t buffer_size, ssize_t *head
 int parse_http_request(const char *header, HttpRequest *request);
 void handle_client(int client_fd);
 void singchld_handler(int sig);
-void handle_get(int client_fd, const char *request_path);
+void handle_get(int client_fd, const char *request_path, const char *content_type);
 ssize_t get_content_length(const char *header);
 void handle_post(int client_fd, HttpRequest req, char *buffer, ssize_t header_size, ssize_t request_size);
 void send_response(int client_fd, const char *status, const char *content_type, const void *body, const size_t body_size);
@@ -200,8 +199,7 @@ ssize_t read_http_header(int fd, char *buffer, size_t buffer_size, ssize_t *head
    HTTP Parsing
 ========================= */
 
-int parse_http_request(const char *header,
-                       HttpRequest *request)
+int parse_http_request(const char *header, HttpRequest *request)
 {
     char method[8];
     char type[16];
@@ -265,9 +263,15 @@ void handle_client(int client_fd)
         return;
     }
 
+    char file_path[512];
+
+    build_file_path(req.path, file_path, sizeof(file_path));
+
+    const char *content_type = get_content_type(file_path);
+
     if (strcmp(req.method, "GET") == 0)
     {
-        handle_get(client_fd, req.path);
+        handle_get(client_fd, req.path, content_type);
     }
     else if (strcmp(req.method, "POST") == 0)
     {
@@ -293,7 +297,7 @@ void handle_client(int client_fd)
    GET Handling
 ========================= */
 
-void handle_get(int client_fd, const char *request_path)
+void handle_get(int client_fd, const char *request_path, const char *content_type)
 {
     char file_path[512];
 
@@ -314,9 +318,6 @@ void handle_get(int client_fd, const char *request_path)
     {
         status = "200 OK";
     }
-
-    const char *content_type =
-        get_content_type(file_path);
 
     send_response(client_fd,
                   status,
