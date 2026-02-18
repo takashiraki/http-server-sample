@@ -25,6 +25,8 @@
 
 #define BUFFER_SIZE 1024
 
+#define HEADER_END "\r\n\r\n"
+
 typedef struct
 {
     char *data;
@@ -338,6 +340,7 @@ void handle_get(int client_fd, const char *request_path, const char *content_typ
             setenv("REQUEST_METHOD", "GET", 1);
             setenv("SCRIPT_FILENAME", file_path, 1);
             setenv("REDIRECT_STATUS", "200", 1);
+            setenv("PHP_DISPLAY_ERRORS", "1", 1);
 
             execlp("php-cgi", "php-cgi", NULL);
             perror("execlp");
@@ -362,12 +365,38 @@ void handle_get(int client_fd, const char *request_path, const char *content_typ
             close(pipefd[0]);
             waitpid(gpid, NULL, 0);
 
+            FILE *debug_log_file = fopen("/tmp/php_cgi_debug.log", "w");
+
+            if (debug_log_file)
+            {
+                fwrite(php_output, 1, total, debug_log_file);
+                fclose(debug_log_file);
+            }
+
             char *body = strstr(php_output, "\r\n\r\n");
             size_t body_offset = body ? (body - php_output) + 4 : 0;
 
-            printf("PHP CGI output:\n%.*s\n", (int)total, php_output);
-            send_response(client_fd, "200 OK", "text/html",
-                          php_output + body_offset, total - body_offset);
+            char *status_line = strstr(php_output, "Status:");
+
+            if (status_line)
+            {
+                char *status_end = strstr(status_line, LINE_END);
+
+                if (status_end)
+                {
+                    *status_end = '\0';
+                    status_line += strlen("Status: ");
+
+                    printf("Extracted Status Line: %s\n", status_line);
+                }
+            }
+
+            printf("PHP CGI output received, total size=%zu\n", total);
+            send_response(client_fd,
+                          status_line ? status_line : "200 OK",
+                          "text/html",
+                          php_output + body_offset,
+                          total - body_offset);
 
             free(php_output);
             return;
