@@ -319,7 +319,61 @@ void handle_get(int client_fd, const char *request_path, const char *content_typ
     }
     else if (strcmp(request_file_type, "php") == 0)
     {
-        // ここにPHPの処理書くよ
+        int pipefd[2];
+        if (pipe(pipefd) == -1)
+        {
+            perror("pipe");
+            return;
+        }
+
+        pid_t gpid = fork();
+        if (gpid == 0)
+        {
+            close(pipefd[0]);
+            dup2(pipefd[1], STDOUT_FILENO);
+            close(pipefd[1]);
+
+            setenv("GATEWAY_INTERFACE", "CGI/1.1", 1);
+            setenv("REQUEST_METHOD", "GET", 1);
+            setenv("SCRIPT_FILENAME", file_path, 1);
+            setenv("REDIRECT_STATUS", "200", 1);
+
+            execlp("php-cgi", "php-cgi", NULL);
+            perror("execlp");
+            exit(1);
+        }
+        else if (gpid > 0)
+        {
+            close(pipefd[1]);
+
+            char cgi_buf[4096];
+            ssize_t n;
+            size_t total = 0;
+            char *php_output = NULL;
+
+            while ((n = read(pipefd[0], cgi_buf, sizeof(cgi_buf))) > 0)
+            {
+                php_output = realloc(php_output, total + n);
+                memcpy(php_output + total, cgi_buf, n);
+                total += n;
+            }
+            close(pipefd[0]);
+            waitpid(gpid, NULL, 0);
+
+            char *body = strstr(php_output, "\r\n\r\n");
+            size_t body_offset = body ? (body - php_output) + 4 : 0;
+
+            send_response(client_fd, "200 OK", "text/html",
+                          php_output + body_offset, total - body_offset);
+
+            free(php_output);
+            return;
+        }
+        else
+        {
+            perror("fork");
+            return;
+        }
     }
 
     if (file_data.data == NULL)
