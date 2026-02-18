@@ -329,6 +329,7 @@ void handle_get(int client_fd, const char *request_path, const char *content_typ
         pid_t gpid = fork();
         if (gpid == 0)
         {
+            printf("Executing PHP CGI for %s\n", file_path);
             close(pipefd[0]);
             dup2(pipefd[1], STDOUT_FILENO);
             close(pipefd[1]);
@@ -344,6 +345,7 @@ void handle_get(int client_fd, const char *request_path, const char *content_typ
         }
         else if (gpid > 0)
         {
+            printf("Forked process for PHP CGI, PID=%d\n", gpid);
             close(pipefd[1]);
 
             char cgi_buf[4096];
@@ -363,6 +365,7 @@ void handle_get(int client_fd, const char *request_path, const char *content_typ
             char *body = strstr(php_output, "\r\n\r\n");
             size_t body_offset = body ? (body - php_output) + 4 : 0;
 
+            printf("PHP CGI output:\n%.*s\n", (int)total, php_output);
             send_response(client_fd, "200 OK", "text/html",
                           php_output + body_offset, total - body_offset);
 
