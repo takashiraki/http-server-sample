@@ -72,7 +72,7 @@ int main(void)
     }
 
     // ここでリッスンするよ（接続待ち状態にする）
-    if (listen(server_fd, 5) < 0)
+    if (listen(server_fd, SOMAXCONN) < 0)
     {
         perror("listen failed");
         return 1;
