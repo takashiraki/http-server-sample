@@ -321,8 +321,8 @@ void handle_get(int client_fd, const char *request_path, const char *content_typ
     }
     else if (strcmp(request_file_type, "php") == 0)
     {
-        int pipefd[2];
-        if (pipe(pipefd) == -1)
+        int pipefd[2], errpipefd[2];
+        if (pipe(pipefd) == -1 || pipe(errpipefd) == -1)
         {
             perror("pipe");
             return;
@@ -336,11 +336,14 @@ void handle_get(int client_fd, const char *request_path, const char *content_typ
             dup2(pipefd[1], STDOUT_FILENO);
             close(pipefd[1]);
 
+            close(errpipefd[0]);
+            dup2(errpipefd[1], STDERR_FILENO);
+            close(errpipefd[1]);
+
             setenv("GATEWAY_INTERFACE", "CGI/1.1", 1);
             setenv("REQUEST_METHOD", "GET", 1);
             setenv("SCRIPT_FILENAME", file_path, 1);
             setenv("REDIRECT_STATUS", "200", 1);
-            setenv("PHP_DISPLAY_ERRORS", "1", 1);
 
             execlp("php-cgi", "php-cgi", NULL);
             perror("execlp");
@@ -350,7 +353,7 @@ void handle_get(int client_fd, const char *request_path, const char *content_typ
         {
             printf("Forked process for PHP CGI, PID=%d\n", gpid);
             close(pipefd[1]);
-
+            close(errpipefd[1]);
             char cgi_buf[4096];
             ssize_t n;
             size_t total = 0;
@@ -362,14 +365,43 @@ void handle_get(int client_fd, const char *request_path, const char *content_typ
                 memcpy(php_output + total, cgi_buf, n);
                 total += n;
             }
-            close(pipefd[0]);
-            waitpid(gpid, NULL, 0);
 
-            FILE *debug_log_file = fopen("/tmp/php_cgi_debug.log", "w");
+            char *cgi_err_buf[4096];
+            ssize_t err_n;
+            size_t err_total = 0;
+            char *cgi_error = NULL;
+
+            while ((err_n = read(errpipefd[0], cgi_err_buf, sizeof(cgi_err_buf))) > 0)
+            {
+                // メモリ確保し直し
+                // （一個前のループまでで読み込んだ量と今回読み込んだ量の合計サイズにする）
+                cgi_error = realloc(cgi_error, err_total + err_n);
+
+                // エラー内容を蓄積
+                memcpy(cgi_error + err_total, cgi_err_buf, err_n);
+
+                // 総エラーサイズを更新
+                err_total += err_n;
+            }
+
+            close(pipefd[0]);
+            close(errpipefd[0]);
+
+            // exit code取得
+            int wstatus = 0;
+            waitpid(gpid, &wstatus, 0);
+
+            FILE *debug_log_file = fopen("/tmp/php_cgi_debug.log", "a");
 
             if (debug_log_file)
             {
                 fwrite(php_output, 1, total, debug_log_file);
+                fputc('\n', debug_log_file);
+                fputs("-------------- values from pipe --------------\n", debug_log_file);
+                fwrite(cgi_error, 1, err_total, debug_log_file);
+                fputc('\n', debug_log_file);
+                fputs("-------------- exit status --------------\n", debug_log_file);
+                fprintf(debug_log_file, "Exit code: %d\n", WEXITSTATUS(wstatus));
                 fclose(debug_log_file);
             }
 
@@ -389,6 +421,21 @@ void handle_get(int client_fd, const char *request_path, const char *content_typ
 
                     printf("Extracted Status Line: %s\n", status_line);
                 }
+            }
+
+            if (cgi_error && err_total > 0)
+            {
+                fprintf(stderr, "PHP CGI Error Output:\n%.*s\n", (int)err_total, cgi_error);
+
+                send_response(client_fd,
+                              "500 Internal Server Error",
+                              "text/plain",
+                              cgi_error,
+                              err_total);
+
+                free(cgi_error);
+
+                return;
             }
 
             printf("PHP CGI output received, total size=%zu\n", total);
