@@ -27,6 +27,13 @@
 
 #define HEADER_END "\r\n\r\n"
 
+#define READ_PIPE 0
+#define WRITE_PIPE 1
+
+#define WAIT_PID_NO_OPTIONS 0
+
+#define BYTE_UNIT_SIZE 1
+
 typedef struct
 {
     char *data;
@@ -331,14 +338,15 @@ void handle_get(int client_fd, const char *request_path, const char *content_typ
         pid_t gpid = fork();
         if (gpid == 0)
         {
+            // 孫プロセス側での処理
             printf("Executing PHP CGI for %s\n", file_path);
-            close(pipefd[0]);
-            dup2(pipefd[1], STDOUT_FILENO);
-            close(pipefd[1]);
+            close(pipefd[READ_PIPE]);
+            dup2(pipefd[WRITE_PIPE], STDOUT_FILENO);
+            close(pipefd[WRITE_PIPE]);
 
-            close(errpipefd[0]);
-            dup2(errpipefd[1], STDERR_FILENO);
-            close(errpipefd[1]);
+            close(errpipefd[READ_PIPE]);
+            dup2(errpipefd[WRITE_PIPE], STDERR_FILENO);
+            close(errpipefd[WRITE_PIPE]);
 
             setenv("GATEWAY_INTERFACE", "CGI/1.1", 1);
             setenv("REQUEST_METHOD", "GET", 1);
@@ -351,27 +359,28 @@ void handle_get(int client_fd, const char *request_path, const char *content_typ
         }
         else if (gpid > 0)
         {
+            // 　子プロセス側での処理
             printf("Forked process for PHP CGI, PID=%d\n", gpid);
-            close(pipefd[1]);
-            close(errpipefd[1]);
+            close(pipefd[WRITE_PIPE]);
+            close(errpipefd[WRITE_PIPE]);
             char cgi_buf[4096];
             ssize_t n;
             size_t total = 0;
             char *php_output = NULL;
 
-            while ((n = read(pipefd[0], cgi_buf, sizeof(cgi_buf))) > 0)
+            while ((n = read(pipefd[READ_PIPE], cgi_buf, sizeof(cgi_buf))) > 0)
             {
                 php_output = realloc(php_output, total + n);
                 memcpy(php_output + total, cgi_buf, n);
                 total += n;
             }
 
-            char *cgi_err_buf[4096];
+            char cgi_err_buf[4096];
             ssize_t err_n;
             size_t err_total = 0;
             char *cgi_error = NULL;
 
-            while ((err_n = read(errpipefd[0], cgi_err_buf, sizeof(cgi_err_buf))) > 0)
+            while ((err_n = read(errpipefd[READ_PIPE], cgi_err_buf, sizeof(cgi_err_buf))) > 0)
             {
                 // メモリ確保し直し
                 // （一個前のループまでで読み込んだ量と今回読み込んだ量の合計サイズにする）
@@ -384,21 +393,21 @@ void handle_get(int client_fd, const char *request_path, const char *content_typ
                 err_total += err_n;
             }
 
-            close(pipefd[0]);
-            close(errpipefd[0]);
+            close(pipefd[READ_PIPE]);
+            close(errpipefd[READ_PIPE]);
 
             // exit code取得
             int wstatus = 0;
-            waitpid(gpid, &wstatus, 0);
+            waitpid(gpid, &wstatus, WAIT_PID_NO_OPTIONS);
 
             FILE *debug_log_file = fopen("/tmp/php_cgi_debug.log", "a");
 
             if (debug_log_file)
             {
-                fwrite(php_output, 1, total, debug_log_file);
+                fwrite(php_output, BYTE_UNIT_SIZE, total, debug_log_file);
                 fputc('\n', debug_log_file);
                 fputs("-------------- values from pipe --------------\n", debug_log_file);
-                fwrite(cgi_error, 1, err_total, debug_log_file);
+                fwrite(cgi_error, BYTE_UNIT_SIZE, err_total, debug_log_file);
                 fputc('\n', debug_log_file);
                 fputs("-------------- exit status --------------\n", debug_log_file);
                 fprintf(debug_log_file, "Exit code: %d\n", WEXITSTATUS(wstatus));
