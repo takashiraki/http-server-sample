@@ -1,4 +1,5 @@
 .idea
+.claude
 /app/*
 !/app/*.c
 !/app/*.h
