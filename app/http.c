@@ -230,8 +230,8 @@ int parse_http_request(const char *header, HttpRequest *request)
     if (sscanf(header, "%7s %255s", method, path) != 2)
         return PARSE_ERROR;
 
-    strcpy(request->method, method);
-    strcpy(request->path, path);
+    strlcpy(request->method, method, sizeof(request->method));
+    strlcpy(request->path, path, sizeof(request->path));
 
     request->content_length = get_content_length(header);
 
