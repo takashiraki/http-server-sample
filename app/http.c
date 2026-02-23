@@ -329,9 +329,21 @@ void handle_get(int client_fd, const char *request_path, const char *content_typ
     else if (strcmp(request_file_type, "php") == 0)
     {
         int pipefd[2], errpipefd[2];
-        if (pipe(pipefd) == -1 || pipe(errpipefd) == -1)
+
+        // パイプの作成コケたら普通のエラー
+        if (pipe(pipefd) == -1)
         {
             perror("pipe");
+            return;
+        }
+
+        if (pipe(errpipefd) == -1)
+        {
+            perror("pipe");
+
+            // パイプは閉じておこう
+            close(pipefd[READ_PIPE]);
+            close(pipefd[WRITE_PIPE]);
             return;
         }
 
@@ -472,6 +484,7 @@ void handle_get(int client_fd, const char *request_path, const char *content_typ
                               err_total);
 
                 free(cgi_error);
+                free(php_output);
 
                 return;
             }
