@@ -432,18 +432,6 @@ void handle_get(int client_fd, const char *request_path, const char *content_typ
 
             FILE *debug_log_file = fopen("/tmp/php_cgi_debug.log", "a");
 
-            if (debug_log_file)
-            {
-                fwrite(php_output, BYTE_UNIT_SIZE, total, debug_log_file);
-                fputc('\n', debug_log_file);
-                fputs("-------------- values from pipe --------------\n", debug_log_file);
-                fwrite(cgi_error, BYTE_UNIT_SIZE, err_total, debug_log_file);
-                fputc('\n', debug_log_file);
-                fputs("-------------- exit status --------------\n", debug_log_file);
-                fprintf(debug_log_file, "Exit code: %d\n", WEXITSTATUS(wstatus));
-                fclose(debug_log_file);
-            }
-
             char *body = NULL;
 
             if (php_output)
@@ -490,6 +478,27 @@ void handle_get(int client_fd, const char *request_path, const char *content_typ
             }
 
             printf("PHP CGI output received, total size=%zu\n", total);
+
+            if (debug_log_file)
+            {
+                fwrite("PHP CGI Debug Log\n", 1, strlen("PHP CGI Debug Log\n"), debug_log_file);
+                fprintf(debug_log_file, "Response content size: %zu bytes\n", total);
+                fputc('\n', debug_log_file);
+                fputs("-------------- values from pipe --------------\n", debug_log_file);
+                fwrite(cgi_error, BYTE_UNIT_SIZE, err_total, debug_log_file);
+                fputc('\n', debug_log_file);
+                fputs("-------------- exit status --------------\n", debug_log_file);
+                fprintf(debug_log_file, "Exit code: %d\n", WEXITSTATUS(wstatus));
+
+                // 調査ログ
+                if (strstr(status_line ? status_line : php_output, "500 Internal Server Error") != NULL)
+                {
+                    fprintf(stderr, "PHP CGI indicated an internal server error.\n");
+                }
+
+                fclose(debug_log_file);
+            }
+
             send_response(client_fd,
                           status_line ? status_line : "200 OK",
                           "text/html",
