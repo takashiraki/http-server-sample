@@ -230,8 +230,8 @@ int parse_http_request(const char *header, HttpRequest *request)
     if (sscanf(header, "%7s %255s", method, path) != 2)
         return PARSE_ERROR;
 
-    strlcpy(request->method, method, sizeof(request->method));
-    strlcpy(request->path, path, sizeof(request->path));
+    snprintf(request->method, sizeof(request->method), "%s", method);
+    snprintf(request->path, sizeof(request->path), "%s", path);
 
     request->content_length = get_content_length(header);
 
@@ -371,6 +371,15 @@ void handle_get(int client_fd, const char *request_path, const char *content_typ
             while ((n = read(pipefd[READ_PIPE], cgi_buf, sizeof(cgi_buf))) > 0)
             {
                 php_output = realloc(php_output, total + n);
+
+                if (php_output == NULL)
+                {
+                    perror("realloc");
+                    close(pipefd[READ_PIPE]);
+                    close(errpipefd[READ_PIPE]);
+                    return;
+                }
+
                 memcpy(php_output + total, cgi_buf, n);
                 total += n;
             }
@@ -385,6 +394,15 @@ void handle_get(int client_fd, const char *request_path, const char *content_typ
                 // メモリ確保し直し
                 // （一個前のループまでで読み込んだ量と今回読み込んだ量の合計サイズにする）
                 cgi_error = realloc(cgi_error, err_total + err_n);
+
+                if (cgi_error == NULL)
+                {
+                    perror("realloc");
+                    close(pipefd[READ_PIPE]);
+                    close(errpipefd[READ_PIPE]);
+                    free(php_output);
+                    return;
+                }
 
                 // エラー内容を蓄積
                 memcpy(cgi_error + err_total, cgi_err_buf, err_n);
@@ -414,10 +432,21 @@ void handle_get(int client_fd, const char *request_path, const char *content_typ
                 fclose(debug_log_file);
             }
 
-            char *body = strstr(php_output, "\r\n\r\n");
+            char *body = NULL;
+
+            if (php_output)
+            {
+                body = strstr(php_output, "\r\n\r\n");
+            }
+
             size_t body_offset = body ? (body - php_output) + 4 : 0;
 
-            char *status_line = strstr(php_output, "Status:");
+            char *status_line = NULL;
+
+            if (php_output)
+            {
+                status_line = strstr(php_output, "Status: ");
+            }
 
             if (status_line)
             {
@@ -510,6 +539,11 @@ void handle_post(int client_fd, HttpRequest req, char *buffer, ssize_t header_si
     char *body_start_addr = buffer + header_size;
 
     ssize_t already_read_body_size = request_size - header_size;
+    // ヒープバッファオーバーフロー対策
+    if (already_read_body_size > req.content_length)
+    {
+        already_read_body_size = req.content_length;
+    }
 
     if (already_read_body_size > 0)
     {
