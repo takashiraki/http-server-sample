@@ -431,6 +431,7 @@ void handle_get(int client_fd, const char *request_path, const char *content_typ
             waitpid(gpid, &wstatus, WAIT_PID_NO_OPTIONS);
 
             FILE *debug_log_file = fopen("/tmp/php_cgi_debug.log", "a");
+            FILE *error_log_file = fopen("/tmp/php_cgi_error.log", "a");
 
             char *body = NULL;
 
@@ -463,7 +464,10 @@ void handle_get(int client_fd, const char *request_path, const char *content_typ
 
             if (cgi_error && err_total > 0)
             {
-                fprintf(stderr, "PHP CGI Error Output:\n%.*s\n", (int)err_total, cgi_error);
+                fwrite("PHP CGI Error Output:\n", 1, strlen("PHP CGI Error Output:\n"), error_log_file);
+                fwrite(cgi_error, BYTE_UNIT_SIZE, err_total, error_log_file);
+                fputc('\n', error_log_file);
+                fclose(error_log_file);
 
                 send_response(client_fd,
                               "500 Internal Server Error",
