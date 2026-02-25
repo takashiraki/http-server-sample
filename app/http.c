@@ -61,6 +61,8 @@ void singchld_handler(int sig);
 void handle_get(int client_fd, const char *request_path, const char *content_type, const char *file_path, const char *request_file_type);
 ssize_t get_content_length(const char *header);
 void handle_post(int client_fd, HttpRequest req, char *buffer, ssize_t header_size, ssize_t request_size, const char *content_type, const char *request_file_type);
+void handle_php(int client_fd, const char *request_path, const char *content_type, const char *file_path, const char *request_file_type);
+void handle_get_static(int client_fd, const char *request_path, const char *content_type, const char *file_path, const char *request_file_type);
 void send_response(int client_fd, const char *status, const char *content_type, const void *body, const size_t body_size);
 
 /* =========================
@@ -313,9 +315,9 @@ void handle_client(int client_fd)
     }
 }
 
-/* =========================
-   GET Handling
-========================= */
+/**
+ * Handle get
+ */
 
 void handle_get(int client_fd, const char *request_path, const char *content_type, const char *file_path, const char *request_file_type)
 {
@@ -375,7 +377,9 @@ void handle_get(int client_fd, const char *request_path, const char *content_typ
             printf("Forked process for PHP CGI, PID=%d\n", gpid);
             close(pipefd[WRITE_PIPE]);
             close(errpipefd[WRITE_PIPE]);
-            char cgi_buf[4096];
+
+            // 256kb
+            char cgi_buf[256 * 1024];
             ssize_t n;
             size_t total = 0;
             char *php_output = NULL;
@@ -396,7 +400,7 @@ void handle_get(int client_fd, const char *request_path, const char *content_typ
                 total += n;
             }
 
-            char cgi_err_buf[4096];
+            char cgi_err_buf[256 * 1024];
             ssize_t err_n;
             size_t err_total = 0;
             char *cgi_error = NULL;
@@ -538,6 +542,231 @@ void handle_get(int client_fd, const char *request_path, const char *content_typ
     free(file_data.data);
 }
 
+/**
+ * Handle get for static files
+ */
+void handle_get_static(int client_fd, const char *request_path, const char *content_type, const char *file_path, const char *request_file_type)
+{
+    const char *status;
+    FileData file_data;
+
+    file_data = read_file(file_path);
+
+    if (file_data.data == NULL)
+    {
+        printf("error: read content\n");
+        status = "404 Not Found";
+    }
+    else
+    {
+        status = "200 OK";
+    }
+
+    send_response(client_fd,
+                  status,
+                  content_type,
+                  file_data.data,
+                  file_data.size);
+
+    free(file_data.data);
+}
+
+void handle_php(int client_fd, const char *request_path, const char *content_type, const char *file_path, const char *request_file_type)
+{
+
+    int pipefd[2], errpipefd[2];
+
+    // パイプの作成コケたら普通のエラー
+    if (pipe(pipefd) == -1)
+    {
+        perror("pipe");
+        return;
+    }
+
+    if (pipe(errpipefd) == -1)
+    {
+        perror("pipe");
+
+        // パイプは閉じておこう
+        close(pipefd[READ_PIPE]);
+        close(pipefd[WRITE_PIPE]);
+        return;
+    }
+
+    pid_t gpid = fork();
+    if (gpid == 0)
+    {
+        // 孫プロセス側での処理
+        printf("Executing PHP CGI for %s\n", file_path);
+        close(pipefd[READ_PIPE]);
+        dup2(pipefd[WRITE_PIPE], STDOUT_FILENO);
+        close(pipefd[WRITE_PIPE]);
+
+        close(errpipefd[READ_PIPE]);
+        dup2(errpipefd[WRITE_PIPE], STDERR_FILENO);
+        close(errpipefd[WRITE_PIPE]);
+
+        setenv("GATEWAY_INTERFACE", "CGI/1.1", 1);
+        setenv("REQUEST_METHOD", "GET", 1);
+        setenv("SCRIPT_FILENAME", file_path, 1);
+        setenv("REDIRECT_STATUS", "200", 1);
+
+        execlp("php-cgi", "php-cgi", NULL);
+        perror("execlp");
+        exit(1);
+    }
+    else if (gpid > 0)
+    {
+        // 　子プロセス側での処理
+        printf("Forked process for PHP CGI, PID=%d\n", gpid);
+        close(pipefd[WRITE_PIPE]);
+        close(errpipefd[WRITE_PIPE]);
+
+        // 256kb
+        char cgi_buf[256 * 1024];
+        ssize_t n;
+        size_t total = 0;
+        char *php_output = NULL;
+
+        while ((n = read(pipefd[READ_PIPE], cgi_buf, sizeof(cgi_buf))) > 0)
+        {
+            php_output = realloc(php_output, total + n);
+
+            if (php_output == NULL)
+            {
+                perror("realloc");
+                close(pipefd[READ_PIPE]);
+                close(errpipefd[READ_PIPE]);
+                return;
+            }
+
+            memcpy(php_output + total, cgi_buf, n);
+            total += n;
+        }
+
+        char cgi_err_buf[256 * 1024];
+        ssize_t err_n;
+        size_t err_total = 0;
+        char *cgi_error = NULL;
+
+        while ((err_n = read(errpipefd[READ_PIPE], cgi_err_buf, sizeof(cgi_err_buf))) > 0)
+        {
+            // メモリ確保し直し
+            // （一個前のループまでで読み込んだ量と今回読み込んだ量の合計サイズにする）
+            cgi_error = realloc(cgi_error, err_total + err_n);
+
+            if (cgi_error == NULL)
+            {
+                perror("realloc");
+                close(pipefd[READ_PIPE]);
+                close(errpipefd[READ_PIPE]);
+                free(php_output);
+                return;
+            }
+
+            // エラー内容を蓄積
+            memcpy(cgi_error + err_total, cgi_err_buf, err_n);
+
+            // 総エラーサイズを更新
+            err_total += err_n;
+        }
+
+        close(pipefd[READ_PIPE]);
+        close(errpipefd[READ_PIPE]);
+
+        // exit code取得
+        int wstatus = 0;
+        waitpid(gpid, &wstatus, WAIT_PID_NO_OPTIONS);
+
+        FILE *debug_log_file = fopen("/tmp/php_cgi_debug.log", "a");
+        FILE *error_log_file = fopen("/tmp/php_cgi_error.log", "a");
+
+        char *body = NULL;
+
+        if (php_output)
+        {
+            body = strstr(php_output, "\r\n\r\n");
+        }
+
+        size_t body_offset = body ? (body - php_output) + 4 : 0;
+
+        char *status_line = NULL;
+
+        if (php_output)
+        {
+            status_line = strstr(php_output, "Status: ");
+        }
+
+        if (status_line)
+        {
+            char *status_end = strstr(status_line, LINE_END);
+
+            if (status_end)
+            {
+                *status_end = '\0';
+                status_line += strlen("Status: ");
+
+                printf("Extracted Status Line: %s\n", status_line);
+            }
+        }
+
+        if (cgi_error && err_total > 0)
+        {
+            fwrite("PHP CGI Error Output:\n", 1, strlen("PHP CGI Error Output:\n"), error_log_file);
+            fwrite(cgi_error, BYTE_UNIT_SIZE, err_total, error_log_file);
+            fputc('\n', error_log_file);
+            fclose(error_log_file);
+
+            send_response(client_fd,
+                          "500 Internal Server Error",
+                          "text/plain",
+                          cgi_error,
+                          err_total);
+
+            free(cgi_error);
+            free(php_output);
+
+            return;
+        }
+
+        printf("PHP CGI output received, total size=%zu\n", total);
+
+        if (debug_log_file)
+        {
+            fwrite("PHP CGI Debug Log\n", 1, strlen("PHP CGI Debug Log\n"), debug_log_file);
+            fprintf(debug_log_file, "Response content size: %zu bytes\n", total);
+            fputc('\n', debug_log_file);
+            fputs("-------------- values from pipe --------------\n", debug_log_file);
+            fwrite(cgi_error, BYTE_UNIT_SIZE, err_total, debug_log_file);
+            fputc('\n', debug_log_file);
+            fputs("-------------- exit status --------------\n", debug_log_file);
+            fprintf(debug_log_file, "Exit code: %d\n", WEXITSTATUS(wstatus));
+
+            // 調査ログ
+            if (strstr(status_line ? status_line : php_output, "500 Internal Server Error") != NULL)
+            {
+                fprintf(stderr, "PHP CGI indicated an internal server error.\n");
+            }
+
+            fclose(debug_log_file);
+        }
+
+        send_response(client_fd,
+                      status_line ? status_line : "200 OK",
+                      "text/html",
+                      php_output + body_offset,
+                      total - body_offset);
+
+        free(php_output);
+        return;
+    }
+    else
+    {
+        perror("fork");
+        return;
+    }
+}
+
 /* =========================
    POST Handling
 ========================= */
@@ -613,11 +842,6 @@ void handle_post(int client_fd, HttpRequest req, char *buffer, ssize_t header_si
                   "text/plain",
                   "POST received",
                   strlen("POST received"));
-}
-
-void handle_php(int client_fd, HttpRequest req, char *buffer, ssize_t header_size, ssize_t request_size)
-{
-    //
 }
 
 /* =========================
