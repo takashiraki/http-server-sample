@@ -366,6 +366,11 @@ void handle_get_static(int client_fd, const char *request_path, const char *cont
 /**
  * Handle PHP files
  * fork → execute php-cgi → read output from pipe → send response
+ * TODO: 責務分割したい
+ * - パイプ作成 + fork + 孫プロセス側のexec実行
+ * - パイプからのstdoutとstderrの読み取り
+ * - CGIレスポンスパース
+ * - ログ書き込み
  */
 void handle_php(int client_fd, const char *request_path, const char *content_type, const char *file_path, const char *request_file_type)
 {
@@ -394,7 +399,12 @@ void handle_php(int client_fd, const char *request_path, const char *content_typ
     {
         // 孫プロセス側での処理
         printf("Executing PHP CGI for %s\n", file_path);
+
+        // この段階では親プロセスと子プロセス両方で
+        // パイプの両端が開いている状態なので、必要のない端は閉じる
         close(pipefd[READ_PIPE]);
+
+        // PHP-CGIが書き込み側なので、標準出力パイプに複写
         dup2(pipefd[WRITE_PIPE], STDOUT_FILENO);
         close(pipefd[WRITE_PIPE]);
 
@@ -512,6 +522,7 @@ void handle_php(int client_fd, const char *request_path, const char *content_typ
             fwrite(cgi_error, BYTE_UNIT_SIZE, err_total, error_log_file);
             fputc('\n', error_log_file);
             fclose(error_log_file);
+            fclose(debug_log_file);
 
             send_response(client_fd,
                           "500 Internal Server Error",
