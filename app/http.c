@@ -425,6 +425,8 @@ void handle_php(int client_fd, const char *request_path, const char *content_typ
     {
         // 　子プロセス側での処理
         printf("Forked process for PHP CGI, PID=%d\n", gpid);
+
+        // 子プロセスは書き込みしないので、すぐに書き込みパイプ閉じちゃう
         close(pipefd[WRITE_PIPE]);
         close(errpipefd[WRITE_PIPE]);
 
