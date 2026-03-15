@@ -10,6 +10,9 @@
 #include <sys/wait.h>
 #include <errno.h>
 
+#include "http.h"
+#include "file.h"
+
 #define HEADER_END_LEN 4
 #define HEADER_END_OVERLAP (HEADER_END_LEN - 1)
 
@@ -36,22 +39,11 @@
 
 typedef struct
 {
-    char *data;
-    size_t size;
-} FileData;
-
-typedef struct
-{
     char method[8];
     char path[256];
     ssize_t content_length;
 } HttpRequest;
 
-/* =========================
-   Function Declarations
-========================= */
-
-FileData read_file(const char *path);
 const char *get_content_type(const char *path);
 void build_file_path(const char *request_path, char *full_path, size_t size);
 ssize_t read_http_header(int fd, char *buffer, size_t buffer_size, ssize_t *header_length);
@@ -65,38 +57,9 @@ void handle_php(int client_fd, const char *request_path, const char *content_typ
 void handle_get_static(int client_fd, const char *request_path, const char *content_type, const char *file_path, const char *request_file_type);
 void send_response(int client_fd, const char *status, const char *content_type, const void *body, const size_t body_size);
 
-/* =========================
-   File Handling
-========================= */
-
-FileData read_file(const char *path)
-{
-    FileData result = {NULL, 0};
-
-    FILE *file = fopen(path, "rb");
-    if (file == NULL)
-        return result;
-
-    fseek(file, 0, SEEK_END);
-    long file_size = ftell(file);
-    fseek(file, 0, SEEK_SET);
-
-    char *data = malloc(file_size);
-    if (data == NULL)
-    {
-        fclose(file);
-        return result;
-    }
-
-    fread(data, 1, file_size, file);
-    fclose(file);
-
-    result.data = data;
-    result.size = file_size;
-
-    return result;
-}
-
+/**
+ * 責務：HTTP関連
+ */
 const char *get_content_type(const char *path)
 {
     const char *ext = strrchr(path, '.');
@@ -123,6 +86,9 @@ const char *get_content_type(const char *path)
     return "text/plain";
 }
 
+/**
+ * 責務：HTTP関連
+ */
 const char *get_request_file_type(const char *path)
 {
     const char *ext = strrchr(path, '.');
@@ -136,10 +102,9 @@ const char *get_request_file_type(const char *path)
     return "static";
 }
 
-/* =========================
-   Path Handling
-========================= */
-
+/**
+ * 責務：HTTP関連
+ */
 void build_file_path(const char *request_path, char *full_path, size_t size)
 {
     const char *base = "/var/www/html";
@@ -168,10 +133,9 @@ void build_file_path(const char *request_path, char *full_path, size_t size)
     snprintf(full_path, size, "%s%s", base, request_path);
 }
 
-/* =========================
-   HTTP Header Read
-========================= */
-
+/**
+ * 責務：HTTP関連
+ */
 ssize_t read_http_header(int fd, char *buffer, size_t buffer_size, ssize_t *header_length)
 {
     ssize_t total = 0;
@@ -219,10 +183,9 @@ ssize_t read_http_header(int fd, char *buffer, size_t buffer_size, ssize_t *head
     return -1;
 }
 
-/* =========================
-   HTTP Parsing
-========================= */
-
+/**
+ * 責務：HTTP関連
+ */
 int parse_http_request(const char *header, HttpRequest *request)
 {
     char method[8];
@@ -240,10 +203,9 @@ int parse_http_request(const char *header, HttpRequest *request)
     return OK;
 }
 
-/* =========================
-   Client Handling
-========================= */
-
+/**
+ * 責務：HTTP関連
+ */
 void handle_client(int client_fd)
 {
     char buffer[BUFFER_SIZE];
@@ -316,9 +278,8 @@ void handle_client(int client_fd)
 }
 
 /**
- * Handle get
+ * 責務：HTTP関連
  */
-
 void handle_get(int client_fd, const char *request_path, const char *content_type, const char *file_path, const char *request_file_type)
 {
     if (strcmp(request_file_type, "static") == 0)
@@ -334,8 +295,7 @@ void handle_get(int client_fd, const char *request_path, const char *content_typ
 }
 
 /**
- * Handle get for static files
- * Read file → create status line → send response
+ * 責務：HTTP関連
  */
 void handle_get_static(int client_fd, const char *request_path, const char *content_type, const char *file_path, const char *request_file_type)
 {
@@ -365,6 +325,7 @@ void handle_get_static(int client_fd, const char *request_path, const char *cont
 
 /**
  * Handle PHP files
+ * 責務：HTTP関連
  * fork → execute php-cgi → read output from pipe → send response
  * TODO: 責務分割したい
  * - パイプ作成 + fork + 孫プロセス側のexec実行
@@ -576,10 +537,9 @@ void handle_php(int client_fd, const char *request_path, const char *content_typ
     }
 }
 
-/* =========================
-   POST Handling
-========================= */
-
+/**
+ * 責務：HTTP関連
+ */
 void handle_post(int client_fd, HttpRequest req, char *buffer, ssize_t header_size, ssize_t request_size, const char *content_type, const char *request_file_type)
 {
     if (req.content_length < 0)
@@ -653,10 +613,9 @@ void handle_post(int client_fd, HttpRequest req, char *buffer, ssize_t header_si
                   strlen("POST received"));
 }
 
-/* =========================
-   Response Sending
-========================= */
-
+/**
+ * 責務：HTTP関連
+ */
 void send_response(int client_fd, const char *status, const char *content_type, const void *body, const size_t body_size)
 {
     char header[512];
@@ -712,10 +671,9 @@ void send_response(int client_fd, const char *status, const char *content_type, 
     }
 }
 
-/* =========================
-   Content-Length Parsing
-========================= */
-
+/**
+ * 責務：HTTP関連
+ */
 ssize_t get_content_length(const char *header)
 {
     const char *line_start = header;
