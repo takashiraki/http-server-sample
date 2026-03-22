@@ -528,6 +528,7 @@ void handle_php(int client_fd, const char *request_path, const char *content_typ
                       total - body_offset);
 
         free(php_output);
+        free(cgi_error);
         return;
     }
     else
